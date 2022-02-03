@@ -8,14 +8,9 @@ import org.lwjgl.system.MemoryStack;
 
 import java.nio.IntBuffer;
 
+import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.opengl.GL11.glBegin;
-import static org.lwjgl.opengl.GL11.glVertex3f;
-import static org.lwjgl.opengl.GL11.glColor4f;
-import static org.lwjgl.opengl.GL11.glEnd;
-import static org.lwjgl.opengl.GL11.glFlush;
-import static org.lwjgl.opengl.GL11.glClearColor;
-import static org.lwjgl.opengl.GL11.glClear;
+import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class RadonClient {
@@ -39,6 +34,27 @@ public class RadonClient {
         if (windowHandle == NULL) {
             throw new RuntimeException("Failed to create the GLFW window");
         }
+
+        // Get the thread stack and push a new frame
+        try ( MemoryStack stack = MemoryStack.stackPush() ) {
+            IntBuffer pWidth = stack.mallocInt(1); // int*
+            IntBuffer pHeight = stack.mallocInt(1); // int*
+
+            // Get the window size passed to glfwCreateWindow
+            glfwGetWindowSize(windowHandle, pWidth, pHeight);
+
+            // Get the resolution of the primary monitor
+            GLFWVidMode vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+
+            // Center the window
+            glfwSetWindowPos(
+                    windowHandle,
+                    (vidmode.width() - pWidth.get(0)) / 2,
+                    (vidmode.height() - pHeight.get(0)) / 2
+            );
+        } // the stack frame is popped automatically
+
+
         glfwMakeContextCurrent(windowHandle);
         boolean vSync = false;
         glfwSwapInterval(vSync ? 1 : 0);
@@ -52,8 +68,8 @@ public class RadonClient {
         int fps = 0;
         double lastSecondTime = 0.0;
         while (!glfwWindowShouldClose(windowHandle)) {
-            glClear(16640);
-            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glClearColor(0.2f, 0.1f, 0.4f, 1.0f);
             render();
             glfwSwapBuffers(windowHandle);
             glfwPollEvents();
@@ -67,6 +83,10 @@ public class RadonClient {
                 lastSecondTime = currentFrameTime;
             }
         }
+        glfwFreeCallbacks(windowHandle);
+        glfwDestroyWindow(windowHandle);
+
         glfwTerminate();
+        glfwSetErrorCallback(null).free();
     }
 }
