@@ -24,18 +24,20 @@ public class RadonClient {
         int fps;
         double lastSecondTime = 0.0;
         float[] vertices = new float[]{
-                -0.5f, 0.5f, 0,
-                0.5f, 0.5f, 0,
-                -0.5f, -0.5f, 0,
-                -0.5f, -0.5f, 0,
-                0.5f, 0.5f, 0,
-                0.5f, -0.5f, 0
+                -0.5f, 0.5f, 0.0f,
+                0.5f, 0.5f, 0.0f,
+                -0.5f, -0.5f, 0.0f,
+                0.5f, -0.5f, 0.0f
         };
-        Model model = ModelFactory.create(vertices);
+
+        int[] indices = new int[] {
+                0, 1, 2, 2, 1, 3
+        };
+        Model model = ModelFactory.create(vertices, indices);
         while (WINDOW.isOpen()) {
             RENDERER.prepare();
-            //RENDERER.render(model);
-            RENDERER.renderTriangle();
+            RENDERER.render(model);
+            //RENDERER.renderTriangle();
             WINDOW.update();
             frames++;
             double currentFrameTime = glfwGetTime();

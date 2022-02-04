@@ -2,18 +2,18 @@ package com.github.retrooper.radonclient.model;
 
 public class Model {
     private int vaoId;
-    private int vertexCount;
+    private int indicesCount;
 
-    protected Model(int vaoId, int vertexCount) {
+    protected Model(int vaoId, int indicesCount) {
         this.vaoId = vaoId;
-        this.vertexCount = vertexCount;
+        this.indicesCount = indicesCount;
     }
 
     public int getVaoId() {
         return vaoId;
     }
 
-    public int getVertexCount() {
-        return vertexCount;
+    public int getIndicesCount() {
+        return indicesCount;
     }
 }
