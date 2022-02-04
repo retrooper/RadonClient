@@ -53,7 +53,7 @@ public class ModelFactory {
 
     }
 
-    public static void cleanup() {
+    public static void destroy() {
         for (int vaoId : VAOS) {
             glDeleteVertexArrays(vaoId);
         }
