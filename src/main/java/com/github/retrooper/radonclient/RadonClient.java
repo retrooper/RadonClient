@@ -1,16 +1,17 @@
 package com.github.retrooper.radonclient;
 
-import com.github.retrooper.radonclient.renderer.MasterRenderer;
+import com.github.retrooper.radonclient.model.Model;
+import com.github.retrooper.radonclient.model.ModelFactory;
+import com.github.retrooper.radonclient.renderer.EntityRenderer;
 import com.github.retrooper.radonclient.window.Resolution;
 import com.github.retrooper.radonclient.window.Window;
-import org.lwjgl.Version;
 import org.lwjgl.glfw.GLFWErrorCallback;
 
 import static org.lwjgl.glfw.GLFW.*;
 
 public class RadonClient {
     public static final Window WINDOW = new Window("RadonClient", new Resolution(1280, 720), false);
-    public static final MasterRenderer RENDERER = new MasterRenderer();
+    public static final EntityRenderer RENDERER = new EntityRenderer();
 
     public static void main(String[] args) {
         GLFWErrorCallback.createPrint(System.err).set();
@@ -22,9 +23,19 @@ public class RadonClient {
         int frames = 0;
         int fps;
         double lastSecondTime = 0.0;
+        float[] vertices = new float[]{
+                -0.5f, 0.5f, 0,
+                0.5f, 0.5f, 0,
+                -0.5f, -0.5f, 0,
+                -0.5f, -0.5f, 0,
+                0.5f, 0.5f, 0,
+                0.5f, -0.5f, 0
+        };
+        Model model = ModelFactory.create(vertices);
         while (WINDOW.isOpen()) {
             RENDERER.prepare();
-            RENDERER.render();
+            //RENDERER.render(model);
+            RENDERER.renderTriangle();
             WINDOW.update();
             frames++;
             double currentFrameTime = glfwGetTime();
@@ -36,6 +47,7 @@ public class RadonClient {
                 lastSecondTime = currentFrameTime;
             }
         }
+        ModelFactory.cleanup();
         glfwTerminate();
         glfwSetErrorCallback(null).free();
     }
