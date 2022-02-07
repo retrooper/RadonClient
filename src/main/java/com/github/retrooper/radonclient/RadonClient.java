@@ -139,6 +139,13 @@ public class RadonClient {
                 camera.move(MoveDirection.RIGHT, 0.02f * getDeltaTimeFloat());
             }
 
+            if (InputUtil.isKeyDown(GLFW_KEY_SPACE)) {
+                camera.move(MoveDirection.UP, 0.02f * getDeltaTimeFloat());
+            }
+            else if (InputUtil.isKeyDown(GLFW_KEY_LEFT_ALT)) {
+                camera.move(MoveDirection.DOWN, 0.02f * getDeltaTimeFloat());
+            }
+
             double mouseX = InputUtil.getMouseXPos();
             double mouseY = InputUtil.getMouseYPos();
             double mouseDeltaX = InputUtil.getDeltaMouseX();

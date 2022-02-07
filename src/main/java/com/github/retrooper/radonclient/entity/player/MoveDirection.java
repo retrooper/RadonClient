@@ -4,7 +4,9 @@ public enum MoveDirection {
     FORWARD,
     BACKWARD,
     LEFT,
-    RIGHT;
+    RIGHT,
+    UP,
+    DOWN;
 
     MoveDirection getOpposite() {
         return switch (this) {
@@ -12,6 +14,8 @@ public enum MoveDirection {
             case BACKWARD -> FORWARD;
             case LEFT -> RIGHT;
             case RIGHT -> LEFT;
+            case UP -> DOWN;
+            case DOWN -> UP;
         };
     }
 }

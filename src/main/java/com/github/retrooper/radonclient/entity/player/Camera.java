@@ -55,6 +55,12 @@ public class Camera {
             case LEFT:
                 position.x -= amount;
                 break;
+            case UP:
+                position.y += amount;
+                break;
+            case DOWN:
+                position.y -= amount;
+                break;
         }
     }
 
