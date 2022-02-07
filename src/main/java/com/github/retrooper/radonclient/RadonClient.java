@@ -15,6 +15,8 @@ import com.github.retrooper.radonclient.window.Window;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFWErrorCallback;
 
+import java.nio.ByteBuffer;
+
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
 
@@ -36,41 +38,81 @@ public class RadonClient {
         int fps;
         double lastSecondTime = 0.0;
         float[] vertices = {
-                //Higher Left corner
-                -0.5f, 0.5f, 0,
-                //Lower Left corner
-                -0.5f, -0.5f, 0,
-                //Lower right corner
-                0.5f, -0.5f, 0,
-                //Higher right corner
-                0.5f, 0.5f, 0,
+                -0.5f,0.5f,-0.5f,
+                -0.5f,-0.5f,-0.5f,
+                0.5f,-0.5f,-0.5f,
+                0.5f,0.5f,-0.5f,
+
+                -0.5f,0.5f,0.5f,
+                -0.5f,-0.5f,0.5f,
+                0.5f,-0.5f,0.5f,
+                0.5f,0.5f,0.5f,
+
+                0.5f,0.5f,-0.5f,
+                0.5f,-0.5f,-0.5f,
+                0.5f,-0.5f,0.5f,
+                0.5f,0.5f,0.5f,
+
+                -0.5f,0.5f,-0.5f,
+                -0.5f,-0.5f,-0.5f,
+                -0.5f,-0.5f,0.5f,
+                -0.5f,0.5f,0.5f,
+
+                -0.5f,0.5f,0.5f,
+                -0.5f,0.5f,-0.5f,
+                0.5f,0.5f,-0.5f,
+                0.5f,0.5f,0.5f,
+
+                -0.5f,-0.5f,0.5f,
+                -0.5f,-0.5f,-0.5f,
+                0.5f,-0.5f,-0.5f,
+                0.5f,-0.5f,0.5f
+
+        };
+
+        float[] uv = {
+
+                0,0,
+                0,1,
+                1,1,
+                1,0,
+                0,0,
+                0,1,
+                1,1,
+                1,0,
+                0,0,
+                0,1,
+                1,1,
+                1,0,
+                0,0,
+                0,1,
+                1,1,
+                1,0,
+                0,0,
+                0,1,
+                1,1,
+                1,0,
+                0,0,
+                0,1,
+                1,1,
+                1,0
+
 
         };
 
         int[] indices = {
-                //Top left corner
-                0,
-                //Bottom left corner
-                1,
-                //Bottom right corner
-                2,
-                //Bottom right corner
-                2,
-                //Top right corner
-                3,
-                //Top left corner
-                0
-        };
-
-        //The corners basically (a quad) as x and y coordinates.
-        //Top left is (0|0), Top right is (1|0)
-        //Bottom left is (0|1), Bottom right is (1|1)
-        float[] uv = new float[] {
-                0, 0,
-                1, 0,
-                1, 1,
-                0, 1
-        };
+                0,1,3,
+                3,1,2,
+                4,5,7,
+                7,5,6,
+                8,9,11,
+                11,9,10,
+                12,13,15,
+                15,13,14,
+                16,17,19,
+                19,17,18,
+                20,21,23,
+                23,21,22};
 
         Texture texture = TextureFactory.loadTexture("textures/dirtTex.PNG");
         TexturedModel model = ModelFactory.createTexturedModel(texture, vertices, indices, uv);
@@ -96,9 +138,15 @@ public class RadonClient {
             else if (InputUtil.isKeyDown(GLFW_KEY_D)) {
                 camera.move(MoveDirection.RIGHT, 0.02f * getDeltaTimeFloat());
             }
+
+            double mouseX = InputUtil.getMouseXPos();
+            double mouseY = InputUtil.getMouseYPos();
+            double mouseDeltaX = InputUtil.getDeltaMouseX();
+            double mouseDeltaY = InputUtil.getDeltaMouseY();
+            camera.rotate(mouseDeltaX, mouseDeltaY);
             RENDERER.prepare();
             SHADER.start();
-            //entity.getRotation().add(0, 0.1f, 0.1f);
+            entity.getRotation().add(0, 0.1f, 0.1f);
             SHADER.updateViewMatrix(camera.createViewMatrix());
             RENDERER.render(SHADER, entity);
             SHADER.stop();

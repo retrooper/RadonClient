@@ -37,6 +37,10 @@ public class Camera {
         this(window, new Vector3f(), new Vector3f());
     }
 
+    public void rotate(double mouseDeltaX, double mouseDeltaY) {
+        rotation.add((float) (mouseDeltaY) * 0.001f,(float) (mouseDeltaX) * 0.001f, 0);
+    }
+
     public void move(MoveDirection direction, float amount) {
         switch (direction) {
             case FORWARD:

@@ -8,7 +8,7 @@ import static org.lwjgl.glfw.GLFW.*;
 public class InputUtil {
     private static final byte[] KEYS = new byte[348];
     private static final byte[] MOUSE_BUTTONS = new byte[7];
-    private static double MOUSE_X_POS, MOUSE_Y_POS, SCROLL_X, SCROLL_Y, WINDOW_WIDTH, WINDOW_HEIGHT;
+    private static double DELTA_MOUSE_X, DELTA_MOUSE_Y, MOUSE_X_POS_OLD, MOUSE_Y_POS_OLD, MOUSE_X_POS, MOUSE_Y_POS, SCROLL_X, SCROLL_Y, WINDOW_WIDTH, WINDOW_HEIGHT;
 
     private static GLFWKeyCallback KEY_CALLBACK;
     private static GLFWMouseButtonCallback MOUSE_CALLBACK;
@@ -30,6 +30,14 @@ public class InputUtil {
 
     public static double getMouseYPos() {
         return MOUSE_Y_POS;
+    }
+
+    public static double getDeltaMouseX() {
+        return DELTA_MOUSE_X;
+    }
+
+    public static double getDeltaMouseY() {
+        return DELTA_MOUSE_Y;
     }
 
     public static double getScrollX() {
@@ -66,8 +74,13 @@ public class InputUtil {
         MOUSE_MOVE_CALLBACK = new GLFWCursorPosCallback() {
             @Override
             public void invoke(long window, double xPos, double yPos) {
+                MOUSE_X_POS_OLD = MOUSE_X_POS;
+                MOUSE_Y_POS_OLD = MOUSE_Y_POS;
                 MOUSE_X_POS = xPos;
                 MOUSE_Y_POS = yPos;
+
+                DELTA_MOUSE_X = xPos - MOUSE_X_POS_OLD;
+                DELTA_MOUSE_Y = yPos - MOUSE_Y_POS_OLD;
             }
         };
 
