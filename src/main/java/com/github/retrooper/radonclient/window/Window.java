@@ -73,6 +73,10 @@ public class Window {
         glfwDestroyWindow(handle);
     }
 
+    public long getHandle() {
+        return handle;
+    }
+
     public String getTitle() {
         return title;
     }
