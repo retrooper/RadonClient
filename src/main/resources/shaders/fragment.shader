@@ -1,7 +1,10 @@
 #version 400 core
 
-in vec4 color;
+in vec2 textureCoords;
+//GL_TEXTURE0
+uniform sampler2D textureSampler;
+
 out vec4 outColor;
 void main() {
-    outColor = color;
+    outColor = texture(textureSampler, textureCoords);
 }

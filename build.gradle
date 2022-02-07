@@ -8,6 +8,7 @@ version '1.0.0-SNAPSHOT'
 
 import org.gradle.internal.os.OperatingSystem
 
+project.ext.jomlVersion = "1.10.3"
 project.ext.lwjglVersion = "3.3.0"
 
 switch (OperatingSystem.current()) {
@@ -51,4 +52,7 @@ dependencies {
     runtimeOnly "org.lwjgl:lwjgl-opengl::$lwjglNatives"
     runtimeOnly "org.lwjgl:lwjgl-par::$lwjglNatives"
     runtimeOnly "org.lwjgl:lwjgl-stb::$lwjglNatives"
+
+    implementation "org.joml:joml:${jomlVersion}"
+    implementation 'org.l33tlabs.twl:pngdecoder:1.0'
 }

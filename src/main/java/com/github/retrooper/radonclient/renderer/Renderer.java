@@ -2,13 +2,14 @@ package com.github.retrooper.radonclient.renderer;
 
 import static org.lwjgl.opengl.GL11.*;
 
-public class Renderer<T> {
+public class Renderer<T, K> {
     public void prepare() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glClearColor(0.0f, 0.0f, 0.7f, 1.0f);
     }
 
-    public void render(T model) {}
+    public void render(T shader, K model) {
+    }
 
     public void renderTriangle() {
         glBegin(GL_TRIANGLES);
