@@ -71,6 +71,23 @@ public class Window {
     public void destroy() {
         glfwFreeCallbacks(handle);
         glfwDestroyWindow(handle);
+    }
 
+    public String getTitle() {
+        return title;
+    }
+
+    public void updateTitle(String title) {
+        this.title = title;
+        glfwSetWindowTitle(handle, title);
+    }
+
+    public Resolution getResolution() {
+        return resolution;
+    }
+
+    public void updateResolution(Resolution resolution) {
+        this.resolution = resolution;
+        glfwSetWindowSize(handle, resolution.getWidth(), resolution.getHeight());
     }
 }

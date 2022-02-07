@@ -4,6 +4,7 @@ import org.joml.Matrix4f;
 
 public class StaticShader extends Shader {
     private int transformationMatrixPtr;
+    private int projectionMatrixPtr;
     public StaticShader() {
         super("shaders/vertex.shader", "shaders/fragment.shader");
     }
@@ -17,9 +18,14 @@ public class StaticShader extends Shader {
     @Override
     protected void loadUniforms() {
         transformationMatrixPtr = getUniformPointer("transformationMatrix");
+        projectionMatrixPtr = getUniformPointer("projectionMatrix");
     }
 
     public void updateTransformationMatrix(Matrix4f matrix) {
         setUniformMatrix(transformationMatrixPtr, matrix);
+    }
+
+    public void updateProjectionMatrix(Matrix4f matrix) {
+        setUniformMatrix(projectionMatrixPtr, matrix);
     }
 }

@@ -16,4 +16,8 @@ public class Resolution {
     public int getHeight() {
         return height;
     }
+
+    public float getAspectRatio() {
+        return (float)width / (float)height;
+    }
 }

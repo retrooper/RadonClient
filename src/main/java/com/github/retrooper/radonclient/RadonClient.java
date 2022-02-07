@@ -1,6 +1,7 @@
 package com.github.retrooper.radonclient;
 
 import com.github.retrooper.radonclient.entity.Entity;
+import com.github.retrooper.radonclient.entity.player.Camera;
 import com.github.retrooper.radonclient.model.ModelFactory;
 import com.github.retrooper.radonclient.model.TexturedModel;
 import com.github.retrooper.radonclient.renderer.EntityRenderer;
@@ -70,13 +71,17 @@ public class RadonClient {
 
         Texture texture = TextureFactory.loadTexture("textures/dirtTex.PNG");
         TexturedModel model = ModelFactory.createTexturedModel(texture, vertices, indices, uv);
-        Vector3f position = new Vector3f(0, 0, 0);
+        Vector3f position = new Vector3f(0, 0, -1);
         Vector3f rotation = new Vector3f(0, 0, 0);
         Entity entity = new Entity(model, position, rotation, 1.0f);
+        Camera camera = new Camera(WINDOW);
+        SHADER.start();
+        SHADER.updateProjectionMatrix(camera.createProjectionMatrix());
+        SHADER.stop();
         while (WINDOW.isOpen()) {
             RENDERER.prepare();
             SHADER.start();
-            entity.getRotation().add(0, 0, 0.1f);
+            entity.getRotation().add(0, 0.1f, 0.1f);
             RENDERER.render(SHADER, entity);
             SHADER.stop();
             //RENDERER.renderTriangle();
