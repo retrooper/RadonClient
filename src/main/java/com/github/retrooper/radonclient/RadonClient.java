@@ -12,12 +12,21 @@ import com.github.retrooper.radonclient.texture.Texture;
 import com.github.retrooper.radonclient.texture.TextureFactory;
 import com.github.retrooper.radonclient.window.Resolution;
 import com.github.retrooper.radonclient.window.Window;
+import com.github.retrooper.radonclient.world.block.Block;
+import com.github.retrooper.radonclient.world.block.BlockTypes;
+import com.github.retrooper.radonclient.world.chunk.Chunk;
+import org.joml.Vector2i;
 import org.joml.Vector3f;
+import org.joml.Vector3i;
 import org.lwjgl.glfw.GLFWErrorCallback;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
 
+import static com.github.retrooper.radonclient.util.MathUtil.floor;
 import static org.lwjgl.glfw.GLFW.*;
 
 public class RadonClient {
@@ -27,6 +36,8 @@ public class RadonClient {
     private final StaticShader shader = new StaticShader();
     private float deltaTime = 0.0f;
     private final List<Entity> entities = new ArrayList<>();
+    private final Map<Vector2i, Chunk> chunks = new HashMap<>();
+
     public void run() {
         GLFWErrorCallback.createPrint(System.err).set();
         if (!glfwInit()) {
@@ -110,26 +121,28 @@ public class RadonClient {
                 23, 21, 22};
 
 
-
-        Texture texture = TextureFactory.loadTexture("textures/dirtTex.PNG");
+        Texture texture = TextureFactory.loadTexture("textures/dirt.png");
         TexturedModel model = ModelFactory.createTexturedModel(texture, vertices, indices, uv);
         Vector3f rotation = new Vector3f(0, 0, 0);
-        for (int x = 0; x < 32; x++) {
-            for (int z = 0; z < 32; z++) {
-                Vector3f position = new Vector3f(x, 0, z);
-                entities.add(new Entity(model, position, rotation, 1.0f));
-            }
-        }
         Camera camera = new Camera(window);
         shader.start();
         shader.updateProjectionMatrix(camera.createProjectionMatrix());
         shader.stop();
         InputUtil.init(window);
+        Chunk c = new Chunk(0, 0, 16, 16, 16);
+        for (Block block : c.getBlocks()) {
+            if (block.getPosition().y == 0) {
+                block.setType(BlockTypes.DIRT);
+            }
+        }
+        chunks.put(new Vector2i(0, 0), c);
+
         float lastFrameTime = (float) glfwGetTime();
         int frameCount = 0;
         int fps = 0;
         float lastSecondTime = lastFrameTime;
         while (window.isOpen()) {
+            System.out.println("x: " + camera.getPosition().x + ", z: " + camera.getPosition().z + ", y: " + camera.getPosition().y);
             if (InputUtil.isKeyDown(GLFW_KEY_W)) {
                 camera.move(MoveDirection.FORWARD, 2f * deltaTime);
             } else if (InputUtil.isKeyDown(GLFW_KEY_S)) {
@@ -155,6 +168,22 @@ public class RadonClient {
             renderer.prepare();
             shader.start();
             shader.updateViewMatrix(camera.createViewMatrix());
+
+            for (Chunk chunk : chunks.values()) {
+                chunk.handlePerBlock(new Consumer<Block>() {
+                    @Override
+                    public void accept(Block block) {
+                        Block clone = getBlockAt(block.getPosition());
+                        System.out.println("pos: x: " + clone.getPosition().x + ", z: " + clone.getPosition().z + ", origin: x: " + block.getPosition().x + ", z: " + block.getPosition().z);
+
+                        Entity entity = new Entity(model,
+                                block.getPosition(),
+                                new Vector3f(),
+                                1.0f);
+                        renderer.render(shader, entity);
+                    }
+                });
+            }
 
             for (Entity entity : entities) {
                 //entity.getRotation().add(0, 0.1f * deltaTime, 0.1f * deltaTime);
@@ -198,6 +227,26 @@ public class RadonClient {
 
     public StaticShader getShader() {
         return shader;
+    }
+
+    public Vector2i getChunkXZ(Vector3i blockPosition) {
+        //Either floor(x/16), floor(z/16) or x>>4, z>>4
+        return new Vector2i(blockPosition.x >> 4, blockPosition.z >> 4);
+    }
+
+    public Chunk getChunk(Vector3i blockPosition) {
+        Vector2i chunkCoordinates = getChunkXZ(blockPosition);
+        return chunks.get(chunkCoordinates);
+    }
+
+    public Block getBlockAt(Vector3i blockPosition) {
+        Chunk chunk = getChunk(blockPosition);
+        if (chunk == null) {
+            return null;
+        }
+        int secX = blockPosition.x & 15;
+        int secZ = blockPosition.z & 15;
+        return chunk.getBlock(secX, blockPosition.y, secZ);
     }
 
     public static RadonClient getInstance() {

@@ -3,6 +3,7 @@ package com.github.retrooper.radonclient.entity;
 import com.github.retrooper.radonclient.model.TexturedModel;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
+import org.joml.Vector3i;
 
 import static org.joml.Math.toRadians;
 
@@ -14,6 +15,13 @@ public class Entity {
     private final float scale;
     private Vector3f position;
     private Vector3f rotation;
+
+    public Entity(final TexturedModel model, final Vector3i position, final Vector3f rotation, final float scale) {
+        this.model = model;
+        this.position = new Vector3f(position.x, position.y, position.z);
+        this.rotation = rotation;
+        this.scale = scale;
+    }
 
     public Entity(final TexturedModel model, final Vector3f position, final Vector3f rotation, final float scale) {
         this.model = model;
