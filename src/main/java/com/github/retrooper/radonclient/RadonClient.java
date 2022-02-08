@@ -15,6 +15,9 @@ import com.github.retrooper.radonclient.window.Window;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFWErrorCallback;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.lwjgl.glfw.GLFW.*;
 
 public class RadonClient {
@@ -23,7 +26,7 @@ public class RadonClient {
     private final EntityRenderer renderer = new EntityRenderer();
     private final StaticShader shader = new StaticShader();
     private float deltaTime = 0.0f;
-
+    private final List<Entity> entities = new ArrayList<>();
     public void run() {
         GLFWErrorCallback.createPrint(System.err).set();
         if (!glfwInit()) {
@@ -110,9 +113,13 @@ public class RadonClient {
 
         Texture texture = TextureFactory.loadTexture("textures/dirtTex.PNG");
         TexturedModel model = ModelFactory.createTexturedModel(texture, vertices, indices, uv);
-        Vector3f position = new Vector3f(0, 0, -1);
         Vector3f rotation = new Vector3f(0, 0, 0);
-        Entity entity = new Entity(model, position, rotation, 1.0f);
+        for (int x = 0; x < 32; x++) {
+            for (int z = 0; z < 32; z++) {
+                Vector3f position = new Vector3f(x, 0, z);
+                entities.add(new Entity(model, position, rotation, 1.0f));
+            }
+        }
         Camera camera = new Camera(window);
         shader.start();
         shader.updateProjectionMatrix(camera.createProjectionMatrix());
@@ -147,9 +154,13 @@ public class RadonClient {
             camera.updateRotation();
             renderer.prepare();
             shader.start();
-            //entity.getRotation().add(0, 0.1f, 0.1f);
             shader.updateViewMatrix(camera.createViewMatrix());
-            renderer.render(shader, entity);
+
+            for (Entity entity : entities) {
+                //entity.getRotation().add(0, 0.1f * deltaTime, 0.1f * deltaTime);
+                renderer.render(shader, entity);
+            }
+
             shader.stop();
             window.update();
             float currentTime = (float) glfwGetTime();
