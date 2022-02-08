@@ -17,6 +17,7 @@ import com.github.retrooper.radonclient.window.Window;
 import com.github.retrooper.radonclient.world.block.Block;
 import com.github.retrooper.radonclient.world.block.BlockTypes;
 import com.github.retrooper.radonclient.world.chunk.ChunkColumn;
+import com.github.retrooper.radonclient.world.chunk.ChunkHelper;
 import org.joml.Vector3f;
 import org.joml.Vector3i;
 import org.lwjgl.glfw.GLFWErrorCallback;
@@ -170,7 +171,7 @@ public class RadonClient {
                     int maxZ = (floor(camera.getPosition().z) >> 4) + chunkRenderDistance;
                     for (int x = minX; x <= maxX; x++) {
                         for (int z = minZ; z <= maxZ; z++) {
-                            long columnId = ChunkColumn.serialize(x, z);
+                            long columnId = ChunkHelper.serializeChunkXZ(x, z);
                             ChunkColumn chunkColumn = chunkColumns.get(columnId);
                             if (chunkColumn == null || !renderedColumns.containsKey(columnId)) {
                                 //Make it since it does not exist
@@ -275,30 +276,6 @@ public class RadonClient {
 
     public StaticShader getShader() {
         return shader;
-    }
-
-    public ChunkColumn getChunk(Vector3i blockPosition) {
-        return chunkColumns.get(ChunkColumn.serialize(blockPosition.x >> 4, blockPosition.z >> 4));
-    }
-
-    public Block getBlockAt(Vector3i blockPosition) {
-        ChunkColumn chunkColumn = getChunk(blockPosition);
-        if (chunkColumn == null) {
-            return null;
-        }
-        int secX = blockPosition.x & 15;
-        int secZ = blockPosition.z & 15;
-        return chunkColumn.getBlock(secX, blockPosition.y, secZ);
-    }
-
-    public void setBlockAt(Vector3i blockPosition, Block block) {
-        ChunkColumn chunkColumn = getChunk(blockPosition);
-        if (chunkColumn == null) {
-            return;
-        }
-        int secX = blockPosition.x & 15;
-        int secZ = blockPosition.z & 15;
-        chunkColumn.setBlock(secX, blockPosition.y, secZ, block);
     }
 
     public static RadonClient getInstance() {

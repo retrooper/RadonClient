@@ -8,6 +8,8 @@ import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 public class ChunkColumn {
@@ -44,11 +46,7 @@ public class ChunkColumn {
     }
 
     public long serialize() {
-        return serialize(x, z);
-    }
-
-    public static long serialize(int x, int z) {
-        return ((x & 0xFFFFFFFFL) << 32L) | (z & 0xFFFFFFFFL);
+        return ChunkHelper.serializeChunkXZ(x, z);
     }
 
     //X(0-15), Y(0-255), Z(0-15)
