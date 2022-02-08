@@ -3,7 +3,7 @@ package com.github.retrooper.radonclient.renderer;
 import static org.lwjgl.opengl.GL11.*;
 
 public class Renderer<T, K> {
-    public void prepare() {
+    public static void prepare() {
         glEnable(GL_DEPTH_TEST);
         glClearColor(0.0f, 0.0f, 0.7f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

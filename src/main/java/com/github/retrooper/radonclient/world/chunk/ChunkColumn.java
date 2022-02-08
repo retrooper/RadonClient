@@ -1,6 +1,10 @@
 package com.github.retrooper.radonclient.world.chunk;
 
+import com.github.retrooper.radonclient.RadonClient;
+import com.github.retrooper.radonclient.entity.Entity;
 import com.github.retrooper.radonclient.world.block.Block;
+import com.github.retrooper.radonclient.world.block.BlockTypes;
+import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -79,12 +83,31 @@ public class ChunkColumn {
         }
     }
 
+    public List<Entity> getEntities() {
+        List<Entity> entities = new ArrayList<>();
+        for (int x = 0; x < 16; x++) {
+            for (int z = 0; z < 16; z++) {
+                for (Chunk chunk : chunks) {
+                    for (int y = 0; y < 16; y++) {
+                        Block block = chunk.getBlock(x, y, z);
+                        if (block.getType().equals(BlockTypes.AIR))continue;
+                        Entity entity = new Entity(RadonClient.DIRT_MODEL,
+                                block.getPosition(),
+                                new Vector3f(),
+                                1.0f);
+                        entities.add(entity);
+                    }
+                }
+            }
+        }
+        return entities;
+    }
+
     public List<Block> getBlocks() {
         List<Block> blocks = new ArrayList<>();
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {
-                for (int chunkIndex = 0; chunkIndex < chunks.length; chunkIndex++) {
-                    Chunk chunk = chunks[chunkIndex];
+                for (Chunk chunk : chunks) {
                     for (int y = 0; y < 16; y++) {
                         blocks.add(chunk.getBlock(x, y, z));
                     }

@@ -6,7 +6,9 @@ import com.github.retrooper.radonclient.entity.player.MoveDirection;
 import com.github.retrooper.radonclient.input.InputUtil;
 import com.github.retrooper.radonclient.model.ModelFactory;
 import com.github.retrooper.radonclient.model.TexturedModel;
+import com.github.retrooper.radonclient.renderer.BatchRenderer;
 import com.github.retrooper.radonclient.renderer.EntityRenderer;
+import com.github.retrooper.radonclient.renderer.Renderer;
 import com.github.retrooper.radonclient.shader.StaticShader;
 import com.github.retrooper.radonclient.texture.Texture;
 import com.github.retrooper.radonclient.texture.TextureFactory;
@@ -19,9 +21,10 @@ import org.joml.Vector3f;
 import org.joml.Vector3i;
 import org.lwjgl.glfw.GLFWErrorCallback;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.github.retrooper.radonclient.util.MathUtil.floor;
 import static org.lwjgl.glfw.GLFW.*;
@@ -30,9 +33,13 @@ public class RadonClient {
     public static final RadonClient INSTANCE = new RadonClient();
     private final Window window = new Window("RadonClient", new Resolution(800, 600), false);
     private final EntityRenderer renderer = new EntityRenderer();
+    private final BatchRenderer batchRenderer = new BatchRenderer();
     private final StaticShader shader = new StaticShader();
     private float deltaTime = 0.0f;
     private final Map<Long, ChunkColumn> chunkColumns = new ConcurrentHashMap<>();
+    private final Map<Long, List<Entity>> renderedColumns = new ConcurrentHashMap<>();
+    public static Texture DIRT_TEXTURE;
+    public static TexturedModel DIRT_MODEL;
 
     public void run() {
         GLFWErrorCallback.createPrint(System.err).set();
@@ -115,8 +122,9 @@ public class RadonClient {
                 20, 21, 23,
                 23, 21, 22};
 
-        Texture texture = TextureFactory.loadTexture("textures/dirt.png");
-        TexturedModel model = ModelFactory.createTexturedModel(texture, vertices, indices, uv);
+        DIRT_TEXTURE = TextureFactory.loadTexture("textures/dirt.png");
+        DIRT_MODEL = ModelFactory.createTexturedModel(DIRT_TEXTURE, vertices, indices, uv);
+
         Camera camera = new Camera(window);
         shader.start();
         shader.updateProjectionMatrix(camera.createProjectionMatrix());
@@ -127,38 +135,73 @@ public class RadonClient {
         int frameCount = 0;
         int fps = 0;
         float lastSecondTime = lastFrameTime;
-        Thread generateTerrainThread = new Thread(() -> {
-            double lastTime = glfwGetTime();
+        int chunkRenderDistance = 1;
+        Thread terrainCleanupThread = new Thread(() -> {
+            long lastCleanupTime = System.currentTimeMillis();
             while (window.isOpen()) {
-                double now = glfwGetTime();
-                if (now - lastTime >= 0.5) {
-                    int minX = (floor(camera.getPosition().x) >> 4) - 1;
-                    int minZ = (floor(camera.getPosition().z) >> 4) - 1;
-                    int maxX = (floor(camera.getPosition().x) >> 4) + 1;
-                    int maxZ = (floor(camera.getPosition().z) >> 4) + 1;
+                long currentTime = System.currentTimeMillis();
+                if (currentTime - lastCleanupTime > 500L) {
+                    List<Long> toRemove = new ArrayList<>();
+                    for (long columnId : renderedColumns.keySet()) {
+                        ChunkColumn column = chunkColumns.get(columnId);
+                        if (column != null) {
+                            int columnDistX = Math.abs(column.getX() - (floor(camera.getPosition().x) >> 4));
+                            int columnDistZ = Math.abs(column.getZ() - (floor(camera.getPosition().z) >> 4));
+                            if (columnDistX > chunkRenderDistance || columnDistZ > chunkRenderDistance) {
+                                toRemove.add(columnId);
+                            }
+                        }
+                    }
+                    for (long columnId : toRemove) {
+                        renderedColumns.remove(columnId);
+                    }
+                    lastCleanupTime = System.currentTimeMillis();
+                }
+            }
+        });
+        Thread generateTerrainThread = new Thread(() -> {
+            long lastTime = System.currentTimeMillis();
+            while (window.isOpen()) {
+                long now = System.currentTimeMillis();
+                if (now - lastTime >= 500L) {
+                    int minX = (floor(camera.getPosition().x) >> 4) - chunkRenderDistance;
+                    int minZ = (floor(camera.getPosition().z) >> 4) - chunkRenderDistance;
+                    int maxX = (floor(camera.getPosition().x) >> 4) + chunkRenderDistance;
+                    int maxZ = (floor(camera.getPosition().z) >> 4) + chunkRenderDistance;
                     for (int x = minX; x <= maxX; x++) {
                         for (int z = minZ; z <= maxZ; z++) {
-                            ChunkColumn chunkColumn = chunkColumns.get(ChunkColumn.serialize(x, z));
-                            if (chunkColumn == null) {
+                            long columnId = ChunkColumn.serialize(x, z);
+                            ChunkColumn chunkColumn = chunkColumns.get(columnId);
+                            if (chunkColumn == null || !renderedColumns.containsKey(columnId)) {
                                 //Make it since it does not exist
                                 chunkColumn = new ChunkColumn(x, z, 256);
+                                List<Entity> entities = new ArrayList<>();
                                 for (Block block : chunkColumn.getBlocks()) {
                                     if (block.getPosition().y == 0) {
+                                        entities.add(
+                                                new Entity(
+                                                        DIRT_MODEL,
+                                                        block.getPosition(),
+                                                        new Vector3f(0, 0, 0),
+                                                        1.0f));
                                         block.setType(BlockTypes.DIRT);
                                     } else {
                                         block.setType(BlockTypes.AIR);
                                     }
                                 }
-                                chunkColumns.put(chunkColumn.serialize(), chunkColumn);
+                                chunkColumns.put(columnId, chunkColumn);
+                                //Cache block entities
+                                renderedColumns.put(columnId, entities);
                                 System.out.println("Created chunk column at " + x + ", " + z);
                             }
                         }
                     }
-                    lastTime = glfwGetTime();
+                    lastTime = System.currentTimeMillis();
                 }
             }
         });
         generateTerrainThread.start();
+        terrainCleanupThread.start();
         while (window.isOpen()) {
             if (InputUtil.isKeyDown(GLFW_KEY_W)) {
                 camera.move(MoveDirection.FORWARD, 10f * deltaTime);
@@ -182,24 +225,15 @@ public class RadonClient {
             double mouseY = InputUtil.getMouseYPos();
             camera.setMousePos(mouseX, mouseY);
             camera.updateRotation();
-            renderer.prepare();
+            Renderer.prepare();
             shader.start();
             shader.updateViewMatrix(camera.createViewMatrix());
-            AtomicInteger count = new AtomicInteger();
-            for (ChunkColumn chunkColumn : chunkColumns.values()) {
-                chunkColumn.handlePerBlock(block -> {
-                    if (block.getType().equals(BlockTypes.AIR)) return;
-                    Entity entity = new Entity(model,
-                            block.getPosition(),
-                            new Vector3f(),
-                            1.0f);
-                    renderer.render(shader, entity);
-                    count.getAndIncrement();
-                });
+            List<Entity> entities = new ArrayList<>();
+            for (List<Entity> columnEntities : renderedColumns.values()) {
+                entities.addAll(columnEntities);
             }
-            if (count.get() != 0) {
-                //System.out.println("Rendered " + count.get() + " dirt blocks!");
-            }
+            batchRenderer.render(shader, entities);
+            //batchRenderer.render(shader, entities);
             shader.stop();
             window.update();
             float currentTime = (float) glfwGetTime();
@@ -233,6 +267,10 @@ public class RadonClient {
 
     public EntityRenderer getRenderer() {
         return renderer;
+    }
+
+    public BatchRenderer getBatchRenderer() {
+        return batchRenderer;
     }
 
     public StaticShader getShader() {
