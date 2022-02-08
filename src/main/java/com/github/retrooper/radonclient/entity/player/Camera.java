@@ -4,56 +4,84 @@ import com.github.retrooper.radonclient.window.Window;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
-import static org.joml.Math.tan;
-import static org.joml.Math.toRadians;
+import static org.joml.Math.*;
 
 public class Camera {
-    private static final Vector3f X_AXIS = new Vector3f(1, 0, 0);
-    private static final Vector3f Y_AXIS = new Vector3f(0, 1, 0);
-    private static final Vector3f Z_AXIS = new Vector3f(0, 0, 1);
     private float aspectRatio;
     private float fov;
     private float farPlane;
     private float nearPlane;
     private Vector3f position;
     private Vector3f rotation;
-    public Camera(Window window, Vector3f position, Vector3f rotation, float fov, float farPlane, float nearPlane) {
+    private double mouseX, mouseY;
+    private double lastMouseX, lastMouseY;
+    private float sensitivity;
+    private float pitch;
+    private float yaw = -90;
+    private Vector3f frontDirection = new Vector3f();
+    private Vector3f leftDirection = new Vector3f();
+
+    public Camera(Window window, Vector3f position, Vector3f rotation, float sensitivity, float fov, float farPlane, float nearPlane) {
         this.position = position;
         this.rotation = rotation;
+        //Between 1 and 100
+        this.sensitivity = Math.max(Math.min(sensitivity, 100.0f), 1.0f);
         this.aspectRatio = window.getResolution().getAspectRatio();
         this.fov = fov;
         this.farPlane = farPlane;
         this.nearPlane = nearPlane;
     }
 
-    public Camera(Window window, Vector3f position, Vector3f rotation) {
+    public Camera(Window window, Vector3f position, Vector3f rotation, float sensitivity) {
         //FOV: Field of view
         //Far-pane: Anything farther than this will not be rendered.
         //Near-pane: Anything closer than this will not be rendered.
-        this(window, position, rotation, 70.0f, 1000.0f, 0.1f);
+        this(window, position, rotation, sensitivity, 70.0f, 1000.0f, 0.1f);
     }
 
     public Camera(Window window) {
-        this(window, new Vector3f(), new Vector3f());
+        this(window, new Vector3f(), new Vector3f(), 100.0f);
     }
 
-    public void rotate(double mouseDeltaX, double mouseDeltaY) {
-        rotation.add((float) (mouseDeltaY) * 0.001f,(float) (mouseDeltaX) * 0.001f, 0);
+    public void setMousePos(double x, double y) {
+        this.mouseX = x;
+        this.mouseY = y;
+    }
+
+    public void updateRotation() {
+        double mouseDeltaY = mouseY - lastMouseY;
+        double mouseDeltaX = mouseX - lastMouseX;
+        float sensFactor = sensitivity / 1000;
+        pitch += mouseDeltaY * sensFactor;
+        //Must be clamped between -90 and 90
+        pitch = clamp(-90.0f, 90.0f, pitch);
+        yaw += mouseDeltaX * sensFactor;
+        frontDirection = new Vector3f(
+                cos(toRadians(yaw)),
+                sin(toRadians(pitch)),
+                sin(toRadians(yaw))).normalize();
+        leftDirection = new Vector3f(0, 1, 0)
+                .cross(frontDirection).normalize();
+
+        lastMouseX = mouseX;
+        lastMouseY = mouseY;
     }
 
     public void move(MoveDirection direction, float amount) {
         switch (direction) {
             case FORWARD:
-                position.z -= amount;
+                Vector3f frontDirClone = new Vector3f(frontDirection);
+                position.add(frontDirClone.mul(amount));
                 break;
-                case BACKWARD:
-                position.z += amount;
-                    break;
-            case RIGHT:
-                position.x += amount;
+            case BACKWARD:
+                move(MoveDirection.FORWARD, -amount);
                 break;
             case LEFT:
-                position.x -= amount;
+                Vector3f leftDirClone = new Vector3f(leftDirection);
+                position.add(leftDirClone.mul(amount));
+                break;
+            case RIGHT:
+                move(MoveDirection.LEFT, -amount);
                 break;
             case UP:
                 position.y += amount;
@@ -78,6 +106,14 @@ public class Camera {
 
     public void setRotation(Vector3f rotation) {
         this.rotation = rotation;
+    }
+
+    public float getSensitivity() {
+        return sensitivity;
+    }
+
+    public void setSensitivity(float sensitivity) {
+        this.sensitivity = Math.max(Math.min(sensitivity, 100.0f), 1.0f);
     }
 
     public float getAspectRatio() {
@@ -112,12 +148,20 @@ public class Camera {
         this.nearPlane = nearPlane;
     }
 
+    public Vector3f getFrontDirection() {
+        return frontDirection;
+    }
+
+    public Vector3f getLeftDirection() {
+        return leftDirection;
+    }
+
     public Matrix4f createViewMatrix() {
-        return new Matrix4f().identity()
-                .rotate(toRadians(rotation.x), X_AXIS)
-                .rotate(toRadians(rotation.y), Y_AXIS)
-                .rotate(toRadians(rotation.z), Z_AXIS)
-                .translate(-position.x, -position.y, -position.z);
+        Vector3f center = new Vector3f(position);
+        center.add(frontDirection);
+        return new Matrix4f()
+                .identity()
+                .lookAt(position, center, new Vector3f(0, 1, 0));
     }
 
     public Matrix4f createProjectionMatrix() {

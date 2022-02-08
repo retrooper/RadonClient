@@ -12,12 +12,10 @@ import com.github.retrooper.radonclient.texture.Texture;
 import com.github.retrooper.radonclient.texture.TextureFactory;
 import com.github.retrooper.radonclient.window.Resolution;
 import com.github.retrooper.radonclient.window.Window;
+import org.joml.Vector2d;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFWErrorCallback;
 
-import java.nio.ByteBuffer;
-
-import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
 
 public class RadonClient {
@@ -38,81 +36,81 @@ public class RadonClient {
         int fps;
         double lastSecondTime = 0.0;
         float[] vertices = {
-                -0.5f,0.5f,-0.5f,
-                -0.5f,-0.5f,-0.5f,
-                0.5f,-0.5f,-0.5f,
-                0.5f,0.5f,-0.5f,
+                -0.5f, 0.5f, -0.5f,
+                -0.5f, -0.5f, -0.5f,
+                0.5f, -0.5f, -0.5f,
+                0.5f, 0.5f, -0.5f,
 
-                -0.5f,0.5f,0.5f,
-                -0.5f,-0.5f,0.5f,
-                0.5f,-0.5f,0.5f,
-                0.5f,0.5f,0.5f,
+                -0.5f, 0.5f, 0.5f,
+                -0.5f, -0.5f, 0.5f,
+                0.5f, -0.5f, 0.5f,
+                0.5f, 0.5f, 0.5f,
 
-                0.5f,0.5f,-0.5f,
-                0.5f,-0.5f,-0.5f,
-                0.5f,-0.5f,0.5f,
-                0.5f,0.5f,0.5f,
+                0.5f, 0.5f, -0.5f,
+                0.5f, -0.5f, -0.5f,
+                0.5f, -0.5f, 0.5f,
+                0.5f, 0.5f, 0.5f,
 
-                -0.5f,0.5f,-0.5f,
-                -0.5f,-0.5f,-0.5f,
-                -0.5f,-0.5f,0.5f,
-                -0.5f,0.5f,0.5f,
+                -0.5f, 0.5f, -0.5f,
+                -0.5f, -0.5f, -0.5f,
+                -0.5f, -0.5f, 0.5f,
+                -0.5f, 0.5f, 0.5f,
 
-                -0.5f,0.5f,0.5f,
-                -0.5f,0.5f,-0.5f,
-                0.5f,0.5f,-0.5f,
-                0.5f,0.5f,0.5f,
+                -0.5f, 0.5f, 0.5f,
+                -0.5f, 0.5f, -0.5f,
+                0.5f, 0.5f, -0.5f,
+                0.5f, 0.5f, 0.5f,
 
-                -0.5f,-0.5f,0.5f,
-                -0.5f,-0.5f,-0.5f,
-                0.5f,-0.5f,-0.5f,
-                0.5f,-0.5f,0.5f
+                -0.5f, -0.5f, 0.5f,
+                -0.5f, -0.5f, -0.5f,
+                0.5f, -0.5f, -0.5f,
+                0.5f, -0.5f, 0.5f
 
         };
 
         float[] uv = {
 
-                0,0,
-                0,1,
-                1,1,
-                1,0,
-                0,0,
-                0,1,
-                1,1,
-                1,0,
-                0,0,
-                0,1,
-                1,1,
-                1,0,
-                0,0,
-                0,1,
-                1,1,
-                1,0,
-                0,0,
-                0,1,
-                1,1,
-                1,0,
-                0,0,
-                0,1,
-                1,1,
-                1,0
+                0, 0,
+                0, 1,
+                1, 1,
+                1, 0,
+                0, 0,
+                0, 1,
+                1, 1,
+                1, 0,
+                0, 0,
+                0, 1,
+                1, 1,
+                1, 0,
+                0, 0,
+                0, 1,
+                1, 1,
+                1, 0,
+                0, 0,
+                0, 1,
+                1, 1,
+                1, 0,
+                0, 0,
+                0, 1,
+                1, 1,
+                1, 0
 
 
         };
 
         int[] indices = {
-                0,1,3,
-                3,1,2,
-                4,5,7,
-                7,5,6,
-                8,9,11,
-                11,9,10,
-                12,13,15,
-                15,13,14,
-                16,17,19,
-                19,17,18,
-                20,21,23,
-                23,21,22};
+                0, 1, 3,
+                3, 1, 2,
+                4, 5, 7,
+                7, 5, 6,
+                8, 9, 11,
+                11, 9, 10,
+                12, 13, 15,
+                15, 13, 14,
+                16, 17, 19,
+                19, 17, 18,
+                20, 21, 23,
+                23, 21, 22};
 
         Texture texture = TextureFactory.loadTexture("textures/dirtTex.PNG");
         TexturedModel model = ModelFactory.createTexturedModel(texture, vertices, indices, uv);
@@ -127,33 +125,29 @@ public class RadonClient {
         while (WINDOW.isOpen()) {
             if (InputUtil.isKeyDown(GLFW_KEY_W)) {
                 camera.move(MoveDirection.FORWARD, 0.02f * getDeltaTimeFloat());
-            }
-            else if (InputUtil.isKeyDown(GLFW_KEY_S)) {
+            } else if (InputUtil.isKeyDown(GLFW_KEY_S)) {
                 camera.move(MoveDirection.BACKWARD, 0.02f * getDeltaTimeFloat());
             }
 
             if (InputUtil.isKeyDown(GLFW_KEY_A)) {
                 camera.move(MoveDirection.LEFT, 0.02f * getDeltaTimeFloat());
-            }
-            else if (InputUtil.isKeyDown(GLFW_KEY_D)) {
+            } else if (InputUtil.isKeyDown(GLFW_KEY_D)) {
                 camera.move(MoveDirection.RIGHT, 0.02f * getDeltaTimeFloat());
             }
 
             if (InputUtil.isKeyDown(GLFW_KEY_SPACE)) {
                 camera.move(MoveDirection.UP, 0.02f * getDeltaTimeFloat());
-            }
-            else if (InputUtil.isKeyDown(GLFW_KEY_LEFT_ALT)) {
+            } else if (InputUtil.isKeyDown(GLFW_KEY_LEFT_ALT)) {
                 camera.move(MoveDirection.DOWN, 0.02f * getDeltaTimeFloat());
             }
 
             double mouseX = InputUtil.getMouseXPos();
             double mouseY = InputUtil.getMouseYPos();
-            double mouseDeltaX = InputUtil.getDeltaMouseX();
-            double mouseDeltaY = InputUtil.getDeltaMouseY();
-            camera.rotate(mouseDeltaX, mouseDeltaY);
+            camera.setMousePos(mouseX, mouseY);
+            camera.updateRotation();
             RENDERER.prepare();
             SHADER.start();
-            entity.getRotation().add(0, 0.1f, 0.1f);
+            //entity.getRotation().add(0, 0.1f, 0.1f);
             SHADER.updateViewMatrix(camera.createViewMatrix());
             RENDERER.render(SHADER, entity);
             SHADER.stop();

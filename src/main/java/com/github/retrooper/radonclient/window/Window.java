@@ -42,6 +42,8 @@ public class Window {
                         (vidmode.width() - pWidth.get(0)) / 2,
                         (vidmode.height() - pHeight.get(0)) / 2
                 );
+
+                glfwSetInputMode(handle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             } // the stack frame is popped automatically
             glfwMakeContextCurrent(handle);
             glfwSwapInterval(vSync ? 1 : 0);
