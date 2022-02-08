@@ -52,14 +52,16 @@ public class Camera {
         double mouseDeltaY = mouseY - lastMouseY;
         double mouseDeltaX = mouseX - lastMouseX;
         float sensFactor = sensitivity / 1000;
-        pitch += mouseDeltaY * sensFactor;
+        pitch += (-mouseDeltaY) * sensFactor;
         //Must be clamped between -90 and 90
-        pitch = clamp(-90.0f, 90.0f, pitch);
+        pitch = clamp(-89.0f, 89.0f, pitch);
         yaw += mouseDeltaX * sensFactor;
+
         frontDirection = new Vector3f(
-                cos(toRadians(yaw)),
+                cos(toRadians(yaw)) * cos(toRadians(pitch)),
                 sin(toRadians(pitch)),
-                sin(toRadians(yaw))).normalize();
+                sin(toRadians(yaw)) * cos(toRadians(pitch))
+        ).normalize();
         leftDirection = new Vector3f(0, 1, 0)
                 .cross(frontDirection).normalize();
 
@@ -70,14 +72,14 @@ public class Camera {
     public void move(MoveDirection direction, float amount) {
         switch (direction) {
             case FORWARD:
-                Vector3f frontDirClone = new Vector3f(frontDirection);
+                Vector3f frontDirClone = new Vector3f(frontDirection.x, 0, frontDirection.z).normalize();
                 position.add(frontDirClone.mul(amount));
                 break;
             case BACKWARD:
                 move(MoveDirection.FORWARD, -amount);
                 break;
             case LEFT:
-                Vector3f leftDirClone = new Vector3f(leftDirection);
+                Vector3f leftDirClone = new Vector3f(leftDirection.x, 0, leftDirection.z).normalize();
                 position.add(leftDirClone.mul(amount));
                 break;
             case RIGHT:

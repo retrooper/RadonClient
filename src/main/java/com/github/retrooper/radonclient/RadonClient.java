@@ -32,9 +32,6 @@ public class RadonClient {
         WINDOW.create();
         WINDOW.show();
         SHADER.init();
-        int frames = 0;
-        int fps;
-        double lastSecondTime = 0.0;
         float[] vertices = {
                 -0.5f, 0.5f, -0.5f,
                 -0.5f, -0.5f, -0.5f,
@@ -122,23 +119,28 @@ public class RadonClient {
         SHADER.updateProjectionMatrix(camera.createProjectionMatrix());
         SHADER.stop();
         InputUtil.init(WINDOW);
+        double lastFrameTime = glfwGetTime();
+
+        int frameCount = 0;
+        int fps = 0;
+        double lastSecondTime = glfwGetTime();
         while (WINDOW.isOpen()) {
             if (InputUtil.isKeyDown(GLFW_KEY_W)) {
-                camera.move(MoveDirection.FORWARD, 0.02f * getDeltaTimeFloat());
+                camera.move(MoveDirection.FORWARD, 2f * getDeltaTimeFloat());
             } else if (InputUtil.isKeyDown(GLFW_KEY_S)) {
-                camera.move(MoveDirection.BACKWARD, 0.02f * getDeltaTimeFloat());
+                camera.move(MoveDirection.BACKWARD, 2f * getDeltaTimeFloat());
             }
 
             if (InputUtil.isKeyDown(GLFW_KEY_A)) {
-                camera.move(MoveDirection.LEFT, 0.02f * getDeltaTimeFloat());
+                camera.move(MoveDirection.LEFT, 2f * getDeltaTimeFloat());
             } else if (InputUtil.isKeyDown(GLFW_KEY_D)) {
-                camera.move(MoveDirection.RIGHT, 0.02f * getDeltaTimeFloat());
+                camera.move(MoveDirection.RIGHT, 2f * getDeltaTimeFloat());
             }
 
             if (InputUtil.isKeyDown(GLFW_KEY_SPACE)) {
-                camera.move(MoveDirection.UP, 0.02f * getDeltaTimeFloat());
+                camera.move(MoveDirection.UP, 2f * getDeltaTimeFloat());
             } else if (InputUtil.isKeyDown(GLFW_KEY_LEFT_ALT)) {
-                camera.move(MoveDirection.DOWN, 0.02f * getDeltaTimeFloat());
+                camera.move(MoveDirection.DOWN, 2f * getDeltaTimeFloat());
             }
 
             double mouseX = InputUtil.getMouseXPos();
@@ -152,14 +154,18 @@ public class RadonClient {
             RENDERER.render(SHADER, entity);
             SHADER.stop();
             WINDOW.update();
-            frames++;
-            double currentFrameTime = glfwGetTime();
-            DELTA_TIME = currentFrameTime - lastSecondTime;
-            if (DELTA_TIME > 1.0) {
-                fps = frames;
+            double currentTime = glfwGetTime();
+
+            //Calculate delta-time
+            DELTA_TIME = currentTime - lastFrameTime;
+            lastFrameTime = currentTime;
+            //Calculate FPS
+            frameCount++;
+            if (currentTime - lastSecondTime >= 1.0) {
+                fps = frameCount;
                 System.out.println("FPS: " + fps);
-                frames = 0;
-                lastSecondTime = currentFrameTime;
+                frameCount = 0;
+                lastSecondTime = currentTime;
             }
         }
         SHADER.destroy();
