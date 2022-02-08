@@ -14,12 +14,11 @@ import com.github.retrooper.radonclient.window.Resolution;
 import com.github.retrooper.radonclient.window.Window;
 import com.github.retrooper.radonclient.world.block.Block;
 import com.github.retrooper.radonclient.world.block.BlockTypes;
-import com.github.retrooper.radonclient.world.chunk.Chunk;
+import com.github.retrooper.radonclient.world.chunk.ChunkColumn;
 import org.joml.Vector3f;
 import org.joml.Vector3i;
 import org.lwjgl.glfw.GLFWErrorCallback;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -33,7 +32,7 @@ public class RadonClient {
     private final EntityRenderer renderer = new EntityRenderer();
     private final StaticShader shader = new StaticShader();
     private float deltaTime = 0.0f;
-    private final Map<Long, Chunk> chunks = new ConcurrentHashMap<>();
+    private final Map<Long, ChunkColumn> chunkColumns = new ConcurrentHashMap<>();
 
     public void run() {
         GLFWErrorCallback.createPrint(System.err).set();
@@ -139,19 +138,19 @@ public class RadonClient {
                     int maxZ = (floor(camera.getPosition().z) >> 4) + 1;
                     for (int x = minX; x <= maxX; x++) {
                         for (int z = minZ; z <= maxZ; z++) {
-                            Chunk chunk = chunks.get(Chunk.serialize(x, z));
-                            if (chunk == null) {
+                            ChunkColumn chunkColumn = chunkColumns.get(ChunkColumn.serialize(x, z));
+                            if (chunkColumn == null) {
                                 //Make it since it does not exist
-                                chunk = new Chunk(x, z, 16, 16, 255);
-                                for (Block block : chunk.getBlocks()) {
+                                chunkColumn = new ChunkColumn(x, z, 256);
+                                for (Block block : chunkColumn.getBlocks()) {
                                     if (block.getPosition().y == 0) {
                                         block.setType(BlockTypes.DIRT);
                                     } else {
                                         block.setType(BlockTypes.AIR);
                                     }
                                 }
-                                chunks.put(chunk.serialize(), chunk);
-                                System.out.println("Created chunk at " + x + ", " + z);
+                                chunkColumns.put(chunkColumn.serialize(), chunkColumn);
+                                System.out.println("Created chunk column at " + x + ", " + z);
                             }
                         }
                     }
@@ -187,8 +186,8 @@ public class RadonClient {
             shader.start();
             shader.updateViewMatrix(camera.createViewMatrix());
             AtomicInteger count = new AtomicInteger();
-            for (Chunk chunk : chunks.values()) {
-                chunk.handlePerBlock(block -> {
+            for (ChunkColumn chunkColumn : chunkColumns.values()) {
+                chunkColumn.handlePerBlock(block -> {
                     if (block.getType().equals(BlockTypes.AIR)) return;
                     Entity entity = new Entity(model,
                             block.getPosition(),
@@ -240,28 +239,28 @@ public class RadonClient {
         return shader;
     }
 
-    public Chunk getChunk(Vector3i blockPosition) {
-        return chunks.get(Chunk.serialize(blockPosition.x >> 4, blockPosition.z >> 4));
+    public ChunkColumn getChunk(Vector3i blockPosition) {
+        return chunkColumns.get(ChunkColumn.serialize(blockPosition.x >> 4, blockPosition.z >> 4));
     }
 
     public Block getBlockAt(Vector3i blockPosition) {
-        Chunk chunk = getChunk(blockPosition);
-        if (chunk == null) {
+        ChunkColumn chunkColumn = getChunk(blockPosition);
+        if (chunkColumn == null) {
             return null;
         }
         int secX = blockPosition.x & 15;
         int secZ = blockPosition.z & 15;
-        return chunk.getBlock(secX, blockPosition.y, secZ);
+        return chunkColumn.getBlock(secX, blockPosition.y, secZ);
     }
 
     public void setBlockAt(Vector3i blockPosition, Block block) {
-        Chunk chunk = getChunk(blockPosition);
-        if (chunk == null) {
+        ChunkColumn chunkColumn = getChunk(blockPosition);
+        if (chunkColumn == null) {
             return;
         }
         int secX = blockPosition.x & 15;
         int secZ = blockPosition.z & 15;
-        chunk.setBlock(secX, blockPosition.y, secZ, block);
+        chunkColumn.setBlock(secX, blockPosition.y, secZ, block);
     }
 
     public static RadonClient getInstance() {
