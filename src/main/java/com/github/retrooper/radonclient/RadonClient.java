@@ -21,7 +21,10 @@ import org.lwjgl.glfw.GLFWErrorCallback;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.github.retrooper.radonclient.util.MathUtil.floor;
 import static org.lwjgl.glfw.GLFW.*;
 
 public class RadonClient {
@@ -30,7 +33,7 @@ public class RadonClient {
     private final EntityRenderer renderer = new EntityRenderer();
     private final StaticShader shader = new StaticShader();
     private float deltaTime = 0.0f;
-    private final Map<Long, Chunk> chunks = new HashMap<>();
+    private final Map<Long, Chunk> chunks = new ConcurrentHashMap<>();
 
     public void run() {
         GLFWErrorCallback.createPrint(System.err).set();
@@ -120,35 +123,60 @@ public class RadonClient {
         shader.updateProjectionMatrix(camera.createProjectionMatrix());
         shader.stop();
         InputUtil.init(window);
-        Chunk c = new Chunk(0, 0, 16, 16, 255);
-        for (Block block : c.getBlocks()) {
-            if (block.getPosition().y == 0) {
-                block.setType(BlockTypes.DIRT);
-            }
-        }
-        chunks.put(c.serialize(), c);
 
         float lastFrameTime = (float) glfwGetTime();
         int frameCount = 0;
         int fps = 0;
         float lastSecondTime = lastFrameTime;
+        Thread generateTerrainThread = new Thread(() -> {
+            double lastTime = glfwGetTime();
+            while (window.isOpen()) {
+                double now = glfwGetTime();
+                if (now - lastTime >= 0.5) {
+                    int minX = (floor(camera.getPosition().x) >> 4) - 1;
+                    int minZ = (floor(camera.getPosition().z) >> 4) - 1;
+                    int maxX = (floor(camera.getPosition().x) >> 4) + 1;
+                    int maxZ = (floor(camera.getPosition().z) >> 4) + 1;
+                    for (int x = minX; x <= maxX; x++) {
+                        for (int z = minZ; z <= maxZ; z++) {
+                            Chunk chunk = chunks.get(Chunk.serialize(x, z));
+                            if (chunk == null) {
+                                //Make it since it does not exist
+                                chunk = new Chunk(x, z, 16, 16, 255);
+                                for (Block block : chunk.getBlocks()) {
+                                    if (block.getPosition().y == 0) {
+                                        block.setType(BlockTypes.DIRT);
+                                    } else {
+                                        block.setType(BlockTypes.AIR);
+                                    }
+                                }
+                                chunks.put(chunk.serialize(), chunk);
+                                System.out.println("Created chunk at " + x + ", " + z);
+                            }
+                        }
+                    }
+                    lastTime = glfwGetTime();
+                }
+            }
+        });
+        generateTerrainThread.start();
         while (window.isOpen()) {
             if (InputUtil.isKeyDown(GLFW_KEY_W)) {
-                camera.move(MoveDirection.FORWARD, 2f * deltaTime);
+                camera.move(MoveDirection.FORWARD, 10f * deltaTime);
             } else if (InputUtil.isKeyDown(GLFW_KEY_S)) {
-                camera.move(MoveDirection.BACKWARD, 2f * deltaTime);
+                camera.move(MoveDirection.BACKWARD, 10f * deltaTime);
             }
 
             if (InputUtil.isKeyDown(GLFW_KEY_A)) {
-                camera.move(MoveDirection.LEFT, 2f * deltaTime);
+                camera.move(MoveDirection.LEFT, 10f * deltaTime);
             } else if (InputUtil.isKeyDown(GLFW_KEY_D)) {
-                camera.move(MoveDirection.RIGHT, 2f * deltaTime);
+                camera.move(MoveDirection.RIGHT, 10f * deltaTime);
             }
 
             if (InputUtil.isKeyDown(GLFW_KEY_SPACE)) {
-                camera.move(MoveDirection.UP, 2f * deltaTime);
+                camera.move(MoveDirection.UP, 5f * deltaTime);
             } else if (InputUtil.isKeyDown(GLFW_KEY_LEFT_ALT)) {
-                camera.move(MoveDirection.DOWN, 2f * deltaTime);
+                camera.move(MoveDirection.DOWN, 5f * deltaTime);
             }
 
             double mouseX = InputUtil.getMouseXPos();
@@ -158,7 +186,7 @@ public class RadonClient {
             renderer.prepare();
             shader.start();
             shader.updateViewMatrix(camera.createViewMatrix());
-
+            AtomicInteger count = new AtomicInteger();
             for (Chunk chunk : chunks.values()) {
                 chunk.handlePerBlock(block -> {
                     if (block.getType().equals(BlockTypes.AIR)) return;
@@ -167,9 +195,12 @@ public class RadonClient {
                             new Vector3f(),
                             1.0f);
                     renderer.render(shader, entity);
+                    count.getAndIncrement();
                 });
             }
-
+            if (count.get() != 0) {
+                //System.out.println("Rendered " + count.get() + " dirt blocks!");
+            }
             shader.stop();
             window.update();
             float currentTime = (float) glfwGetTime();

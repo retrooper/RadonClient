@@ -2,9 +2,9 @@ package com.github.retrooper.radonclient.world.chunk;
 
 import com.github.retrooper.radonclient.world.block.Block;
 import com.github.retrooper.radonclient.world.block.BlockTypes;
+import org.joml.Vector3i;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -20,7 +20,10 @@ public class Chunk {
         for (int w = 0; w < width; w++) {
             for (int l = 0; l < length; l++) {
                 for (int y = 0; y < height; y++) {
-                    this.blocks[w][l][y] = new Block(BlockTypes.AIR, w, y, l);
+                    int globalX = (x << 4) | w;
+                    int globalZ = (z << 4) | l;
+                    Vector3i blockPos = new Vector3i(globalX, y, globalZ);
+                    this.blocks[w][l][y] = new Block(BlockTypes.AIR, blockPos);
                 }
             }
         }
@@ -43,7 +46,7 @@ public class Chunk {
     }
 
     public Block getBlock(int x, int y, int z) {
-        return this.blocks[x][y][z];
+        return this.blocks[x][z][y];
     }
 
     public void setBlock(int x, int y, int z, Block block) {
@@ -62,9 +65,11 @@ public class Chunk {
 
     public List<Block> getBlocks() {
         List<Block> blocks = new ArrayList<>();
-        for (Block[][] block : this.blocks) {
-            for (Block[] value : block) {
-                blocks.addAll(Arrays.asList(value));
+        for (int x = 0; x < this.blocks.length; x++) {
+            for (int z = 0; z < this.blocks[x].length; z++) {
+                for (int y = 0; y < this.blocks[x][z].length; y++) {
+                    blocks.add(this.blocks[x][z][y]);
+                }
             }
         }
         return blocks;
