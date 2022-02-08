@@ -34,6 +34,7 @@ public abstract class Shader {
     }
 
     protected abstract void loadUniforms();
+
     protected abstract void loadAttributes();
 
     protected void setUniformBoolean(int ptr, boolean value) {

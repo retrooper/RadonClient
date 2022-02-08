@@ -12,26 +12,26 @@ import com.github.retrooper.radonclient.texture.Texture;
 import com.github.retrooper.radonclient.texture.TextureFactory;
 import com.github.retrooper.radonclient.window.Resolution;
 import com.github.retrooper.radonclient.window.Window;
-import org.joml.Vector2d;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFWErrorCallback;
 
 import static org.lwjgl.glfw.GLFW.*;
 
 public class RadonClient {
-    public static final Window WINDOW = new Window("RadonClient", new Resolution(1280, 720), false);
-    public static final EntityRenderer RENDERER = new EntityRenderer();
-    public static final StaticShader SHADER = new StaticShader();
-    public static double DELTA_TIME = 0.0;
+    public static final RadonClient INSTANCE = new RadonClient();
+    private final Window window = new Window("RadonClient", new Resolution(1280, 720), false);
+    private final EntityRenderer renderer = new EntityRenderer();
+    private final StaticShader shader = new StaticShader();
+    private float deltaTime = 0.0f;
 
-    public static void main(String[] args) {
+    public void run() {
         GLFWErrorCallback.createPrint(System.err).set();
         if (!glfwInit()) {
             throw new IllegalStateException("Unable to initialize GLFW");
         }
-        WINDOW.create();
-        WINDOW.show();
-        SHADER.init();
+        window.create();
+        window.show();
+        shader.init();
         float[] vertices = {
                 -0.5f, 0.5f, -0.5f,
                 -0.5f, -0.5f, -0.5f,
@@ -62,7 +62,6 @@ public class RadonClient {
                 -0.5f, -0.5f, -0.5f,
                 0.5f, -0.5f, -0.5f,
                 0.5f, -0.5f, 0.5f
-
         };
 
         float[] uv = {
@@ -91,8 +90,6 @@ public class RadonClient {
                 0, 1,
                 1, 1,
                 1, 0
-
-
         };
 
         int[] indices = {
@@ -109,55 +106,56 @@ public class RadonClient {
                 20, 21, 23,
                 23, 21, 22};
 
+
+
         Texture texture = TextureFactory.loadTexture("textures/dirtTex.PNG");
         TexturedModel model = ModelFactory.createTexturedModel(texture, vertices, indices, uv);
         Vector3f position = new Vector3f(0, 0, -1);
         Vector3f rotation = new Vector3f(0, 0, 0);
         Entity entity = new Entity(model, position, rotation, 1.0f);
-        Camera camera = new Camera(WINDOW);
-        SHADER.start();
-        SHADER.updateProjectionMatrix(camera.createProjectionMatrix());
-        SHADER.stop();
-        InputUtil.init(WINDOW);
-        double lastFrameTime = glfwGetTime();
-
+        Camera camera = new Camera(window);
+        shader.start();
+        shader.updateProjectionMatrix(camera.createProjectionMatrix());
+        shader.stop();
+        InputUtil.init(window);
+        float lastFrameTime = (float) glfwGetTime();
         int frameCount = 0;
         int fps = 0;
-        double lastSecondTime = glfwGetTime();
-        while (WINDOW.isOpen()) {
+        float lastSecondTime = lastFrameTime;
+        while (window.isOpen()) {
             if (InputUtil.isKeyDown(GLFW_KEY_W)) {
-                camera.move(MoveDirection.FORWARD, 2f * getDeltaTimeFloat());
+                camera.move(MoveDirection.FORWARD, 2f * deltaTime);
             } else if (InputUtil.isKeyDown(GLFW_KEY_S)) {
-                camera.move(MoveDirection.BACKWARD, 2f * getDeltaTimeFloat());
+                camera.move(MoveDirection.BACKWARD, 2f * deltaTime);
             }
 
             if (InputUtil.isKeyDown(GLFW_KEY_A)) {
-                camera.move(MoveDirection.LEFT, 2f * getDeltaTimeFloat());
+                camera.move(MoveDirection.LEFT, 2f * deltaTime);
             } else if (InputUtil.isKeyDown(GLFW_KEY_D)) {
-                camera.move(MoveDirection.RIGHT, 2f * getDeltaTimeFloat());
+                camera.move(MoveDirection.RIGHT, 2f * deltaTime);
             }
 
             if (InputUtil.isKeyDown(GLFW_KEY_SPACE)) {
-                camera.move(MoveDirection.UP, 2f * getDeltaTimeFloat());
+                camera.move(MoveDirection.UP, 2f * deltaTime);
             } else if (InputUtil.isKeyDown(GLFW_KEY_LEFT_ALT)) {
-                camera.move(MoveDirection.DOWN, 2f * getDeltaTimeFloat());
+                camera.move(MoveDirection.DOWN, 2f * deltaTime);
             }
 
             double mouseX = InputUtil.getMouseXPos();
             double mouseY = InputUtil.getMouseYPos();
             camera.setMousePos(mouseX, mouseY);
             camera.updateRotation();
-            RENDERER.prepare();
-            SHADER.start();
+            renderer.prepare();
+            shader.start();
             //entity.getRotation().add(0, 0.1f, 0.1f);
-            SHADER.updateViewMatrix(camera.createViewMatrix());
-            RENDERER.render(SHADER, entity);
-            SHADER.stop();
-            WINDOW.update();
-            double currentTime = glfwGetTime();
+            shader.updateViewMatrix(camera.createViewMatrix());
+            renderer.render(shader, entity);
+            shader.stop();
+            window.update();
+            float currentTime = (float) glfwGetTime();
 
             //Calculate delta-time
-            DELTA_TIME = currentTime - lastFrameTime;
+            deltaTime = currentTime - lastFrameTime;
             lastFrameTime = currentTime;
             //Calculate FPS
             frameCount++;
@@ -168,18 +166,31 @@ public class RadonClient {
                 lastSecondTime = currentTime;
             }
         }
-        SHADER.destroy();
-        WINDOW.destroy();
+        shader.destroy();
+        window.destroy();
         ModelFactory.destroy();
         glfwTerminate();
         glfwSetErrorCallback(null).free();
     }
 
-    public static double getDeltaTime() {
-        return DELTA_TIME;
+    public float getDeltaTime() {
+        return deltaTime;
     }
 
-    public static float getDeltaTimeFloat() {
-        return (float) DELTA_TIME;
+    public Window getWindow() {
+        return window;
     }
+
+    public EntityRenderer getRenderer() {
+        return renderer;
+    }
+
+    public StaticShader getShader() {
+        return shader;
+    }
+
+    public static RadonClient getInstance() {
+        return INSTANCE;
+    }
+
 }
