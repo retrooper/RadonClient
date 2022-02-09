@@ -89,7 +89,8 @@ public class ChunkColumn {
                     for (int y = 0; y < 16; y++) {
                         Block block = chunk.getBlock(x, y, z);
                         if (block.getType().equals(BlockTypes.AIR))continue;
-                        Entity entity = new Entity(RadonClient.DIRT_MODEL,
+                        //TODO Make accurate model (store in block)
+                        Entity entity = new Entity(RadonClient.GRASS_MODEL,
                                 block.getPosition(),
                                 new Vector3f(),
                                 1.0f);

@@ -40,7 +40,9 @@ public class RadonClient {
     private final Map<Long, ChunkColumn> chunkColumns = new ConcurrentHashMap<>();
     private final Map<Long, List<Entity>> renderedColumns = new ConcurrentHashMap<>();
     public static Texture DIRT_TEXTURE;
+    public static Texture GRASS_TEXTURE_ATLAS;
     public static TexturedModel DIRT_MODEL;
+    public static TexturedModel GRASS_MODEL;
 
     public void run() {
         GLFWErrorCallback.createPrint(System.err).set();
@@ -109,6 +111,38 @@ public class RadonClient {
                 1, 0
         };
 
+        float[] atlasUV = {
+                1.01f / 3.0f, 1.01f / 3.0f,
+                1.01f / 3.0f, 1.99f / 3.0f,
+                1.99f /  3.0f, 1.99f / 3.0f,
+                1.99f / 3.0f, 1.01f / 3.0f,
+
+                1.01f / 3.0f, 1.01f / 3.0f,
+                1.01f / 3.0f, 1.99f / 3.0f,
+                1.99f /  3.0f, 1.99f / 3.0f,
+                1.99f / 3.0f, 1.01f / 3.0f,
+
+                1.01f / 3.0f, 1.01f / 3.0f,
+                1.01f / 3.0f, 1.99f / 3.0f,
+                1.99f /  3.0f, 1.99f / 3.0f,
+                1.99f / 3.0f, 1.01f / 3.0f,
+
+                1.01f / 3.0f, 1.01f / 3.0f,
+                1.01f / 3.0f, 1.99f / 3.0f,
+                1.99f /  3.0f, 1.99f / 3.0f,
+                1.99f / 3.0f, 1.01f / 3.0f,
+
+                1.0f / 3.0f, 2.01f / 3.0f,
+                1.01f / 3.0f, 0.99f,
+                1.99f / 3.0f, 0.99f,
+                1.99f / 3.0f, 2.1f / 3.0f,
+
+                0.01f, 1.0f / 3.0f,
+                0.01f, 1.99f / 3.0f,
+                0.99f / 3.0f, 1.99f / 3.0f,
+                0.99f / 3.0f, 1.01f / 3.0f
+        };
+
         int[] indices = {
                 0, 1, 3,
                 3, 1, 2,
@@ -124,7 +158,9 @@ public class RadonClient {
                 23, 21, 22};
 
         DIRT_TEXTURE = TextureFactory.loadTexture("textures/dirt.png");
+        GRASS_TEXTURE_ATLAS = TextureFactory.loadTexture("textures/grassTextureAtlas.png");
         DIRT_MODEL = ModelFactory.createTexturedModel(DIRT_TEXTURE, vertices, indices, uv);
+        GRASS_MODEL = ModelFactory.createTexturedModel(GRASS_TEXTURE_ATLAS, vertices, indices, atlasUV);
 
         Camera camera = new Camera(window);
         shader.start();
@@ -179,9 +215,10 @@ public class RadonClient {
                                 List<Entity> entities = new ArrayList<>();
                                 for (Block block : chunkColumn.getBlocks()) {
                                     if (block.getPosition().y == 0) {
+                                        TexturedModel model = (x == 0 && z == 0) ? DIRT_MODEL : GRASS_MODEL;
                                         entities.add(
                                                 new Entity(
-                                                        DIRT_MODEL,
+                                                        model,
                                                         block.getPosition(),
                                                         new Vector3f(0, 0, 0),
                                                         1.0f));
@@ -229,11 +266,12 @@ public class RadonClient {
             Renderer.prepare();
             shader.start();
             shader.updateViewMatrix(camera.createViewMatrix());
-            List<Entity> entities = new ArrayList<>();
+            //List<Entity> entities = new ArrayList<>();
             for (List<Entity> columnEntities : renderedColumns.values()) {
-                entities.addAll(columnEntities);
+                for (Entity e : columnEntities) {
+                    renderer.render(shader, e);
+                }
             }
-            batchRenderer.render(shader, entities);
             //batchRenderer.render(shader, entities);
             shader.stop();
             window.update();
