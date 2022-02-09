@@ -12,7 +12,7 @@ import static org.lwjgl.opengl.GL11.*;
 
 public class TextureFactory {
     public static Texture loadTexture(String fileName){
-        PNGDecoder decoder = null;
+        PNGDecoder decoder;
         try {
             InputStream in = TextureFactory.class.getClassLoader().getResourceAsStream(fileName);
             decoder = new PNGDecoder(in);
