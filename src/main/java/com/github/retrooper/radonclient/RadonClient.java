@@ -37,8 +37,7 @@ public class RadonClient {
     private final BatchRenderer batchRenderer = new BatchRenderer();
     private final StaticShader shader = new StaticShader();
     private float deltaTime = 0.0f;
-    private final Map<Long, ChunkColumn> chunkColumns = new ConcurrentHashMap<>();
-    private final Map<Long, List<Entity>> renderedColumns = new ConcurrentHashMap<>();
+    private final Map<Long, List<Block>> renderedColumns = new ConcurrentHashMap<>();
     public static Texture DIRT_TEXTURE;
     public static Texture GRASS_TEXTURE_ATLAS;
     public static TexturedModel DIRT_MODEL;
@@ -180,12 +179,13 @@ public class RadonClient {
                 if (currentTime - lastCleanupTime > 500L) {
                     List<Long> toRemove = new ArrayList<>();
                     for (long columnId : renderedColumns.keySet()) {
-                        ChunkColumn column = chunkColumns.get(columnId);
+                        ChunkColumn column = ChunkHelper.getChunkColumns().get(columnId);
                         if (column != null) {
                             int columnDistX = Math.abs(column.getX() - (floor(camera.getPosition().x) >> 4));
                             int columnDistZ = Math.abs(column.getZ() - (floor(camera.getPosition().z) >> 4));
                             if (columnDistX > chunkRenderDistance || columnDistZ > chunkRenderDistance) {
                                 toRemove.add(columnId);
+                                //System.out.println("Removing " + column.getX() + ", " + column.getZ());
                             }
                         }
                     }
@@ -208,29 +208,39 @@ public class RadonClient {
                     for (int x = minX; x <= maxX; x++) {
                         for (int z = minZ; z <= maxZ; z++) {
                             long columnId = ChunkHelper.serializeChunkXZ(x, z);
-                            ChunkColumn chunkColumn = chunkColumns.get(columnId);
-                            if (chunkColumn == null || !renderedColumns.containsKey(columnId)) {
+                            ChunkColumn chunkColumn = ChunkHelper.getChunkColumns().get(columnId);
+                            if (chunkColumn == null) {
                                 //Make it since it does not exist
                                 chunkColumn = new ChunkColumn(x, z, 256);
-                                List<Entity> entities = new ArrayList<>();
+                                List<Block> entities = new ArrayList<>();
                                 for (Block block : chunkColumn.getBlocks()) {
                                     if (block.getPosition().y == 0) {
-                                        TexturedModel model = (x == 0 && z == 0) ? DIRT_MODEL : GRASS_MODEL;
-                                        entities.add(
-                                                new Entity(
-                                                        model,
-                                                        block.getPosition(),
-                                                        new Vector3f(0, 0, 0),
-                                                        1.0f));
-                                        block.setType(BlockTypes.DIRT);
+                                        if (x == 0 && z == 0) {
+                                            block.setType(BlockTypes.DIRT);
+                                        }
+                                        else {
+                                            block.setType(BlockTypes.GRASS);
+                                        }
                                     } else {
                                         block.setType(BlockTypes.AIR);
                                     }
+                                    entities.add(block);
                                 }
-                                chunkColumns.put(columnId, chunkColumn);
+                                ChunkHelper.getChunkColumns().put(columnId, chunkColumn);
                                 //Cache block entities
                                 renderedColumns.put(columnId, entities);
                                 System.out.println("Created chunk column at " + x + ", " + z);
+                            }
+                            //It is stored, no need to regenerate.
+                            else if (!renderedColumns.containsKey(columnId)) {
+                                List<Block> entities = new ArrayList<>();
+                                for (Block block : chunkColumn.getBlocks()) {
+                                    if (!block.getType().equals(BlockTypes.AIR)) {
+                                        entities.add(block);
+                                    }
+                                }
+                                renderedColumns.put(columnId, entities);
+                                //System.out.println("Restored chunk column at " + x + ", " + z);
                             }
                         }
                     }
@@ -259,6 +269,15 @@ public class RadonClient {
                 camera.move(MoveDirection.DOWN, 5f * deltaTime);
             }
 
+            if (InputUtil.isKeyDown(GLFW_KEY_RIGHT_SHIFT)) {
+                //System.out.println("Change 1 0 0 to grass!");
+                Block block = ChunkHelper.getBlockAt(1, 0, 0);
+                block.setType(BlockTypes.AIR);
+            }
+            else if (InputUtil.isKeyDown(GLFW_KEY_P)) {
+                camera.setPosition(new Vector3f(1, 0, 0));
+            }
+
             double mouseX = InputUtil.getMouseXPos();
             double mouseY = InputUtil.getMouseYPos();
             camera.setMousePos(mouseX, mouseY);
@@ -267,9 +286,12 @@ public class RadonClient {
             shader.start();
             shader.updateViewMatrix(camera.createViewMatrix());
             //List<Entity> entities = new ArrayList<>();
-            for (List<Entity> columnEntities : renderedColumns.values()) {
-                for (Entity e : columnEntities) {
-                    renderer.render(shader, e);
+            for (List<Block> columnEntities : renderedColumns.values()) {
+                for (Block e : columnEntities) {
+                    if (e.getType().equals(BlockTypes.AIR))continue;
+                    TexturedModel model = e.getType().equals(BlockTypes.GRASS) ? GRASS_MODEL : DIRT_MODEL;
+                    Entity entity = new Entity(model, e.getPosition(), new Vector3f(0, 0, 0), 1.0f);
+                    renderer.render(shader, entity);
                 }
             }
             //batchRenderer.render(shader, entities);
@@ -284,6 +306,7 @@ public class RadonClient {
             frameCount++;
             if (currentTime - lastSecondTime >= 1.0) {
                 fps = frameCount;
+                //System.out.println("Cam pos: " + camera.getPosition().x + ", " + camera.getPosition().y + ", " + camera.getPosition().z);
                 System.out.println("FPS: " + fps);
                 frameCount = 0;
                 lastSecondTime = currentTime;

@@ -17,11 +17,12 @@ public class ChunkHelper {
     }
 
     public static ChunkColumn getChunkColumnAt(int x, int z) {
-        return CHUNK_COLUMNS.get(serializeChunkXZ(x, z));
+        return CHUNK_COLUMNS.get(serializeChunkXZ(x >> 4, z >> 4));
     }
 
     public static Chunk getChunkAt(int x, int y, int z) {
         ChunkColumn column = getChunkColumnAt(x, z);
+        System.out.println("Column x z: " + (x >> 4) + ", " + (z >> 4));
         return column.getChunks()[y >> 4];
     }
 

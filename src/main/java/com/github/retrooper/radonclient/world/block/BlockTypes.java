@@ -8,6 +8,7 @@ public class BlockTypes {
     private static int BLOCK_TYPE_COUNT = 0;
     public static final BlockType AIR = declare("air", null);
     public static final BlockType DIRT = declare("dirt", "dirt");
+    public static final BlockType GRASS = declare("grass", "grassTextureAtlas");
 
 
 
