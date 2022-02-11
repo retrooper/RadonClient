@@ -4,9 +4,8 @@ import com.github.retrooper.radonclient.entity.Entity;
 import com.github.retrooper.radonclient.entity.player.Camera;
 import com.github.retrooper.radonclient.entity.player.MoveDirection;
 import com.github.retrooper.radonclient.input.InputUtil;
+import com.github.retrooper.radonclient.model.Model;
 import com.github.retrooper.radonclient.model.ModelFactory;
-import com.github.retrooper.radonclient.model.TexturedModel;
-import com.github.retrooper.radonclient.renderer.BatchRenderer;
 import com.github.retrooper.radonclient.renderer.EntityRenderer;
 import com.github.retrooper.radonclient.renderer.Renderer;
 import com.github.retrooper.radonclient.shader.StaticShader;
@@ -22,6 +21,7 @@ import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFWErrorCallback;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -33,14 +33,12 @@ public class RadonClient {
     public static final RadonClient INSTANCE = new RadonClient();
     private final Window window = new Window("RadonClient", new Resolution(800, 600), false);
     private final EntityRenderer renderer = new EntityRenderer();
-    private final BatchRenderer batchRenderer = new BatchRenderer();
     private final StaticShader shader = new StaticShader();
     private float deltaTime = 0.0f;
     private final Map<Long, List<Block>> renderedColumns = new ConcurrentHashMap<>();
-    public static Texture DIRT_TEXTURE;
-    public static Texture GRASS_TEXTURE_ATLAS;
-    public static TexturedModel DIRT_MODEL;
-    public static TexturedModel GRASS_MODEL;
+    public static Texture TEXTURES;
+    public static Model DIRT_MODEL;
+    public static Model GRASS_MODEL;
 
     public void run() {
         GLFWErrorCallback.createPrint(System.err).set();
@@ -109,38 +107,6 @@ public class RadonClient {
                 1, 0
         };
 
-        float[] atlasUV = {
-                1.01f / 3.0f, 1.01f / 3.0f,
-                1.01f / 3.0f, 1.99f / 3.0f,
-                1.99f /  3.0f, 1.99f / 3.0f,
-                1.99f / 3.0f, 1.01f / 3.0f,
-
-                1.01f / 3.0f, 1.01f / 3.0f,
-                1.01f / 3.0f, 1.99f / 3.0f,
-                1.99f /  3.0f, 1.99f / 3.0f,
-                1.99f / 3.0f, 1.01f / 3.0f,
-
-                1.01f / 3.0f, 1.01f / 3.0f,
-                1.01f / 3.0f, 1.99f / 3.0f,
-                1.99f /  3.0f, 1.99f / 3.0f,
-                1.99f / 3.0f, 1.01f / 3.0f,
-
-                1.01f / 3.0f, 1.01f / 3.0f,
-                1.01f / 3.0f, 1.99f / 3.0f,
-                1.99f /  3.0f, 1.99f / 3.0f,
-                1.99f / 3.0f, 1.01f / 3.0f,
-
-                1.0f / 3.0f, 2.01f / 3.0f,
-                1.01f / 3.0f, 0.99f,
-                1.99f / 3.0f, 0.99f,
-                1.99f / 3.0f, 2.1f / 3.0f,
-
-                0.01f, 1.0f / 3.0f,
-                0.01f, 1.99f / 3.0f,
-                0.99f / 3.0f, 1.99f / 3.0f,
-                0.99f / 3.0f, 1.01f / 3.0f
-        };
-
         int[] indices = {
                 0, 1, 3,
                 3, 1, 2,
@@ -155,10 +121,27 @@ public class RadonClient {
                 20, 21, 23,
                 23, 21, 22};
 
-        DIRT_TEXTURE = TextureFactory.loadTexture("textures/dirt.png");
-        GRASS_TEXTURE_ATLAS = TextureFactory.loadTexture("textures/grassTextureAtlas.png");
-        DIRT_MODEL = ModelFactory.createTexturedModel(DIRT_TEXTURE, vertices, indices, uv);
-        GRASS_MODEL = ModelFactory.createTexturedModel(GRASS_TEXTURE_ATLAS, vertices, indices, atlasUV);
+        TEXTURES = TextureFactory.loadTextureArray(128, 128, "dirt.png", "grass.png");
+        //Second axis is redundant here
+        float[] plainDirtTextureIndices = new float[] {
+                0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0,
+        };
+
+        float[] plainGrassTextureIndices = new float[] {
+                1, 1, 1, 1, 1, 1,
+                1, 1, 1, 1, 1, 1,
+                1, 1, 1, 1, 1, 1,
+                1, 1, 1, 1, 1, 1,
+                1, 1, 1, 1, 1, 1,
+                1, 1, 1, 1, 1, 1,
+        };
+        DIRT_MODEL = ModelFactory.createTexturedModel(plainGrassTextureIndices, vertices, indices, uv);
+        GRASS_MODEL = ModelFactory.createTexturedModel(plainDirtTextureIndices, vertices, indices, uv);
 
         Camera camera = new Camera(window);
         shader.start();
@@ -216,8 +199,7 @@ public class RadonClient {
                                     if (block.getPosition().y == 0) {
                                         if (x == 0 && z == 0) {
                                             block.setType(BlockTypes.DIRT);
-                                        }
-                                        else {
+                                        } else {
                                             block.setType(BlockTypes.GRASS);
                                         }
                                     } else {
@@ -278,8 +260,7 @@ public class RadonClient {
                     System.out.println("Currently there: " + block.getType().name());
                     block.setType(BlockTypes.AIR);
                 }
-            }
-            else if (InputUtil.isMouseButtonDown(GLFW_MOUSE_BUTTON_RIGHT)) {
+            } else if (InputUtil.isMouseButtonDown(GLFW_MOUSE_BUTTON_RIGHT)) {
                 Vector3f targetLocation = new Vector3f(camera.getPosition()).add(new Vector3f(camera.getFrontDirection()).mul(2.0f));
                 if (targetLocation.y < 0) {
                     System.out.println("Y too low!");
@@ -288,8 +269,7 @@ public class RadonClient {
                     System.out.println("Currently there: " + block.getType().name());
                     block.setType(BlockTypes.GRASS);
                 }
-            }
-            else if (InputUtil.isKeyDown(GLFW_KEY_P)) {
+            } else if (InputUtil.isKeyDown(GLFW_KEY_P)) {
                 Vector3f targetLocation = new Vector3f(camera.getPosition()).add(new Vector3f(camera.getFrontDirection()).mul(2.0f));
                 camera.setPosition(targetLocation);
             }
@@ -303,10 +283,10 @@ public class RadonClient {
             shader.updateViewMatrix(camera.createViewMatrix());
             for (List<Block> columnEntities : renderedColumns.values()) {
                 for (Block e : columnEntities) {
-                    if (e.getType().equals(BlockTypes.AIR))continue;
-                    TexturedModel model = e.getType().equals(BlockTypes.GRASS) ? GRASS_MODEL : DIRT_MODEL;
+                    if (e.getType().equals(BlockTypes.AIR)) continue;
+                    Model model = e.getType().equals(BlockTypes.GRASS) ? GRASS_MODEL : DIRT_MODEL;
                     Entity entity = new Entity(model, e.getPosition(), new Vector3f(0, 0, 0), 1.0f);
-                    renderer.render(shader, entity);
+                    renderer.render(TEXTURES, shader, entity);
                 }
             }
             shader.stop();
@@ -343,10 +323,6 @@ public class RadonClient {
 
     public EntityRenderer getRenderer() {
         return renderer;
-    }
-
-    public BatchRenderer getBatchRenderer() {
-        return batchRenderer;
     }
 
     public StaticShader getShader() {

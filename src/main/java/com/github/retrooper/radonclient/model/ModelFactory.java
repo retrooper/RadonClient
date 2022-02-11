@@ -1,7 +1,5 @@
 package com.github.retrooper.radonclient.model;
 
-import com.github.retrooper.radonclient.texture.Texture;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,7 +12,7 @@ public class ModelFactory {
     public static final List<Integer> VBOS = new ArrayList<>();
     public static final List<Integer> TEXTURES = new ArrayList<>();
 
-    public static TexturedModel createTexturedModel(Texture texture, float[] vertices, int[] indices, float[] uv) {
+    public static Model createTexturedModel(float[] textureIndices, float[] vertices, int[] indices, float[] uv) {
         int vaoId = glGenVertexArrays();
         VAOS.add(vaoId);
         glBindVertexArray(vaoId);
@@ -23,10 +21,11 @@ public class ModelFactory {
         storeIndicesInVAO(indices);
         //Attribute 1 in VAO (texture coordinates)
         storeFloatsInVAO(uv, 1, 2);
-
+        //Attribute 2 in VAO (texture index)
+        storeFloatsInVAO(textureIndices, 2, 1);
         //Unbind current vaoID
         glBindVertexArray(0);
-        return new TexturedModel(texture, vaoId, indices.length);
+        return new Model(vaoId, indices.length);
     }
 
     //The VBO is a buffer that stores the data for the model
@@ -48,6 +47,15 @@ public class ModelFactory {
         //Store VBO in VAO
         glVertexAttribPointer(attributeIndex, dimensions, GL_FLOAT, false, 0, 0);
         //Unbind current buffer
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+    }
+
+    public static void storeIntsInVAO(int[] data, int attributeIndex, int dimensions) {
+        int vboId = glGenBuffers();
+        VBOS.add(vboId);
+        glBindBuffer(GL_ARRAY_BUFFER, vboId);
+        glBufferData(GL_ARRAY_BUFFER, data, GL_STATIC_DRAW);
+        glVertexAttribPointer(attributeIndex, dimensions, GL_UNSIGNED_BYTE, false, 0, 0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 

@@ -2,29 +2,33 @@ package com.github.retrooper.radonclient.renderer;
 
 import com.github.retrooper.radonclient.entity.Entity;
 import com.github.retrooper.radonclient.shader.StaticShader;
+import com.github.retrooper.radonclient.texture.Texture;
 
-public class EntityRenderer extends Renderer<StaticShader, Entity> {
+import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL13.glActiveTexture;
+import static org.lwjgl.opengl.GL20.glDisableVertexAttribArray;
+import static org.lwjgl.opengl.GL20.glEnableVertexAttribArray;
+import static org.lwjgl.opengl.GL30.GL_TEXTURE_2D_ARRAY;
+import static org.lwjgl.opengl.GL30.glBindVertexArray;
+
+public class EntityRenderer extends Renderer<Texture, StaticShader, Entity> {
     @Override
-    public void render(StaticShader shader, Entity entity) {
+    public void render(Texture texture, StaticShader shader, Entity entity) {
         shader.updateTransformationMatrix(entity.getTransformationMatrix());
-        entity.getModel().draw();
-        /*
-        //Bind VAO (each model has its own)
-        glBindVertexArray(model.getVaoId());
-        //Enable attribute 0 in VAO
+
+        glBindVertexArray(entity.getModel().getVaoId());
         glEnableVertexAttribArray(0);
         glEnableVertexAttribArray(1);
-        //Enable attribute 1 in VAO
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, model.getTexture().getId());
-        glDrawElements(GL_TRIANGLES, model.getIndicesCount(),
+        glEnableVertexAttribArray(2);
+
+        glActiveTexture(GL_TEXTURE_2D_ARRAY);
+        glBindTexture(GL_TEXTURE_2D_ARRAY, texture.getId());
+
+        glDrawElements(GL_TRIANGLES, entity.getModel().getIndicesCount(),
                 GL_UNSIGNED_INT, 0);
-        glColor4f(1, 0, 0, 1);
-        //Disable attribute 0 in VAO
         glDisableVertexAttribArray(0);
-        //Disable attribute 1 in VAO
         glDisableVertexAttribArray(1);
-        //Unbind it
-        glBindVertexArray(0);*/
+        glDisableVertexAttribArray(2);
+        glBindVertexArray(0);
     }
 }

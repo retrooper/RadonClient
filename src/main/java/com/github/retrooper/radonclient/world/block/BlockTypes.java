@@ -32,7 +32,8 @@ public class BlockTypes {
                 if (textureName == null) {
                     return null;
                 }
-                return TextureFactory.loadTexture("textures/" + textureName + ".png");
+                //TODO return TextureFactory.lo("textures/" + textureName + ".png");
+                return null;
             }
 
             @Override

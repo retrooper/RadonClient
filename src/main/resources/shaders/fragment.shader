@@ -1,10 +1,12 @@
 #version 400 core
 
-in vec2 textureCoords;
-//GL_TEXTURE0
-uniform sampler2D textureSampler;
-
+in vec2 fragTextureCoords;
+in float fragTextureIndex;
+//GL_TEXTURE_ARRAY_2D
+uniform sampler2DArray textureArray;
 out vec4 outColor;
+
 void main() {
-    outColor = texture(textureSampler, textureCoords);
+    vec3 texCoords  = vec3(fragTextureCoords, fragTextureIndex);
+    outColor = texture(textureArray, texCoords);
 }

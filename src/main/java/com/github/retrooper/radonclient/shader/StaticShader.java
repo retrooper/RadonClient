@@ -14,6 +14,7 @@ public class StaticShader extends Shader {
     protected void loadAttributes() {
         bindAttribute("position", 0);
         bindAttribute("uv", 1);
+        bindAttribute("textureIndex", 2);
     }
 
     @Override

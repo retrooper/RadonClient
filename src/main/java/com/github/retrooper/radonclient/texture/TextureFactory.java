@@ -9,9 +9,11 @@ import java.nio.ByteBuffer;
 
 import static org.lwjgl.opengl.ARBFramebufferObject.glGenerateMipmap;
 import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL12.*;
+import static org.lwjgl.opengl.GL30.GL_TEXTURE_2D_ARRAY;
 
 public class TextureFactory {
-    public static Texture loadTexture(String fileName){
+    private static ByteBuffer loadTextureAsBuffer(String fileName) {
         PNGDecoder decoder;
         try {
             InputStream in = TextureFactory.class.getClassLoader().getResourceAsStream(fileName);
@@ -28,20 +30,30 @@ public class TextureFactory {
         }
         //Flip the buffer, so we can read it.
         buffer.flip();
+        return buffer;
+    }
+
+    public static Texture loadTextureArray(int width, int height, String... fileNames) {
+        if (fileNames.length == 0) {
+            throw new IllegalStateException("No texture files provided");
+        }
         //Generate texture ID
         int id = glGenTextures();
         ModelFactory.TEXTURES.add(id);
-        //Bind it
-        glBindTexture(GL_TEXTURE_2D, id);
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        //Set the texture parameters(linear or nearest)
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        //Upload
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, decoder.getWidth(), decoder.getHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+        glBindTexture(GL_TEXTURE_2D_ARRAY, id);
+        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, width, height, fileNames.length, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+        for (int i = 0; i < fileNames.length; i++) {
+            ByteBuffer buffer = loadTextureAsBuffer("textures/" + fileNames[i]);
+            glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, i, width, height, 1, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+            System.out.println("Added " + fileNames[i] + " to the texture array...");
+        }
 
-        glGenerateMipmap(GL_TEXTURE_2D);
-
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+        glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
         return new Texture(id);
     }
 }
