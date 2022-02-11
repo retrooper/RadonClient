@@ -1,6 +1,8 @@
 package com.github.retrooper.radonclient.world.chunk;
 
+import com.github.retrooper.radonclient.util.MathUtil;
 import com.github.retrooper.radonclient.world.block.Block;
+import org.joml.Vector3f;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -22,8 +24,11 @@ public class ChunkHelper {
 
     public static Chunk getChunkAt(int x, int y, int z) {
         ChunkColumn column = getChunkColumnAt(x, z);
-        System.out.println("Column x z: " + (x >> 4) + ", " + (z >> 4));
         return column.getChunks()[y >> 4];
+    }
+
+    public static Block getBlockAt(Vector3f position) {
+        return getBlockAt(MathUtil.floor(position.x), MathUtil.floor(position.y), MathUtil.floor(position.z));
     }
 
     public static Block getBlockAt(int x, int y, int z) {
@@ -34,5 +39,9 @@ public class ChunkHelper {
     public static void setBlockAt(int x, int y, int z, Block block) {
         Chunk chunk = getChunkAt(x, y, z);
         chunk.setBlock(x & 15, y & 15, z & 15, block);
+    }
+
+    public static void setBlockAt(Vector3f position, Block block) {
+        setBlockAt(MathUtil.floor(position.x), MathUtil.floor(position.y), MathUtil.floor(position.z), block);
     }
 }

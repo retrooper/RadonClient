@@ -19,7 +19,6 @@ import com.github.retrooper.radonclient.world.block.BlockTypes;
 import com.github.retrooper.radonclient.world.chunk.ChunkColumn;
 import com.github.retrooper.radonclient.world.chunk.ChunkHelper;
 import org.joml.Vector3f;
-import org.joml.Vector3i;
 import org.lwjgl.glfw.GLFWErrorCallback;
 
 import java.util.ArrayList;
@@ -269,13 +268,30 @@ public class RadonClient {
                 camera.move(MoveDirection.DOWN, 5f * deltaTime);
             }
 
-            if (InputUtil.isKeyDown(GLFW_KEY_RIGHT_SHIFT)) {
+            if (InputUtil.isMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT)) {
                 //System.out.println("Change 1 0 0 to grass!");
-                Block block = ChunkHelper.getBlockAt(1, 0, 0);
-                block.setType(BlockTypes.AIR);
+                Vector3f targetLocation = new Vector3f(camera.getPosition()).add(new Vector3f(camera.getFrontDirection()).mul(2.0f));
+                if (targetLocation.y < 0) {
+                    System.out.println("Y too low!");
+                } else {
+                    Block block = ChunkHelper.getBlockAt(targetLocation);
+                    System.out.println("Currently there: " + block.getType().name());
+                    block.setType(BlockTypes.AIR);
+                }
+            }
+            else if (InputUtil.isMouseButtonDown(GLFW_MOUSE_BUTTON_RIGHT)) {
+                Vector3f targetLocation = new Vector3f(camera.getPosition()).add(new Vector3f(camera.getFrontDirection()).mul(2.0f));
+                if (targetLocation.y < 0) {
+                    System.out.println("Y too low!");
+                } else {
+                    Block block = ChunkHelper.getBlockAt(targetLocation);
+                    System.out.println("Currently there: " + block.getType().name());
+                    block.setType(BlockTypes.GRASS);
+                }
             }
             else if (InputUtil.isKeyDown(GLFW_KEY_P)) {
-                camera.setPosition(new Vector3f(1, 0, 0));
+                Vector3f targetLocation = new Vector3f(camera.getPosition()).add(new Vector3f(camera.getFrontDirection()).mul(2.0f));
+                camera.setPosition(targetLocation);
             }
 
             double mouseX = InputUtil.getMouseXPos();
@@ -285,7 +301,6 @@ public class RadonClient {
             Renderer.prepare();
             shader.start();
             shader.updateViewMatrix(camera.createViewMatrix());
-            //List<Entity> entities = new ArrayList<>();
             for (List<Block> columnEntities : renderedColumns.values()) {
                 for (Block e : columnEntities) {
                     if (e.getType().equals(BlockTypes.AIR))continue;
@@ -294,7 +309,6 @@ public class RadonClient {
                     renderer.render(shader, entity);
                 }
             }
-            //batchRenderer.render(shader, entities);
             shader.stop();
             window.update();
             float currentTime = (float) glfwGetTime();
