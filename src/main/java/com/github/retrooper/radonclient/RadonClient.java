@@ -49,62 +49,62 @@ public class RadonClient {
         window.show();
         shader.init();
         float[] vertices = {
-                -0.5f, 0.5f, -0.5f,
-                -0.5f, -0.5f, -0.5f,
-                0.5f, -0.5f, -0.5f,
-                0.5f, 0.5f, -0.5f,
+                -0.5f, 0.5f, -0.5f,//0
+                -0.5f, -0.5f, -0.5f,//1
+                0.5f, -0.5f, -0.5f,//2
+                0.5f, 0.5f, -0.5f,//3
 
-                -0.5f, 0.5f, 0.5f,
-                -0.5f, -0.5f, 0.5f,
-                0.5f, -0.5f, 0.5f,
-                0.5f, 0.5f, 0.5f,
+                -0.5f, 0.5f, 0.5f,//4
+                -0.5f, -0.5f, 0.5f,//5
+                0.5f, -0.5f, 0.5f,//6
+                0.5f, 0.5f, 0.5f,//7
 
-                0.5f, 0.5f, -0.5f,
-                0.5f, -0.5f, -0.5f,
-                0.5f, -0.5f, 0.5f,
-                0.5f, 0.5f, 0.5f,
+                0.5f, 0.5f, -0.5f,//8
+                0.5f, -0.5f, -0.5f,//9
+                0.5f, -0.5f, 0.5f,//10
+                0.5f, 0.5f, 0.5f,//11
 
-                -0.5f, 0.5f, -0.5f,
-                -0.5f, -0.5f, -0.5f,
-                -0.5f, -0.5f, 0.5f,
-                -0.5f, 0.5f, 0.5f,
+                -0.5f, 0.5f, -0.5f,//12
+                -0.5f, -0.5f, -0.5f,//13
+                -0.5f, -0.5f, 0.5f,//14
+                -0.5f, 0.5f, 0.5f,//15
 
-                -0.5f, 0.5f, 0.5f,
-                -0.5f, 0.5f, -0.5f,
-                0.5f, 0.5f, -0.5f,
-                0.5f, 0.5f, 0.5f,
+                -0.5f, 0.5f, 0.5f,//16
+                -0.5f, 0.5f, -0.5f, //17 - 16,17,19 - on top left triangle
+                0.5f, 0.5f, -0.5f, //18 - 19, 17, 18 - on top right triangle
+                0.5f, 0.5f, 0.5f, //19
 
-                -0.5f, -0.5f, 0.5f,
-                -0.5f, -0.5f, -0.5f,
-                0.5f, -0.5f, -0.5f,
-                0.5f, -0.5f, 0.5f
+                -0.5f, -0.5f, 0.5f,//20
+                -0.5f, -0.5f, -0.5f,//21
+                0.5f, -0.5f, -0.5f,//22
+                0.5f, -0.5f, 0.5f//23
         };
 
         float[] uv = {
-                0, 0,
-                0, 1,
-                1, 1,
-                1, 0,
-                0, 0,
-                0, 1,
-                1, 1,
-                1, 0,
-                0, 0,
-                0, 1,
-                1, 1,
-                1, 0,
-                0, 0,
-                0, 1,
-                1, 1,
-                1, 0,
-                0, 0,
-                0, 1,
-                1, 1,
-                1, 0,
-                0, 0,
-                0, 1,
-                1, 1,
-                1, 0
+                0, 0,//0
+                0, 1,//1
+                1, 1,//2
+                1, 0,//3
+                0, 0,//4
+                0, 1,//5
+                1, 1,//6
+                1, 0,//7
+                0, 0,//8
+                0, 1,//9
+                1, 1,//10
+                1, 0,//11
+                0, 0,//12
+                0, 1,//13
+                1, 1,//14
+                1, 0,//15
+                0, 0,//16
+                0, 1,//17
+                1, 1,//18
+                1, 0,//19
+                0, 0,//20
+                0, 1,//21
+                1, 1,//22
+                1, 0//23
         };
 
         int[] indices = {
@@ -116,32 +116,21 @@ public class RadonClient {
                 11, 9, 10,
                 12, 13, 15,
                 15, 13, 14,
-                16, 17, 19,
-                19, 17, 18,
+                16, 17, 19,//top left triangle
+                19, 17, 18,//top right triangle
                 20, 21, 23,
-                23, 21, 22};
+                23, 21, 22
+        };
 
         TEXTURES = TextureFactory.loadTextureArray(128, 128, "dirt.png", "grass.png");
         //Second axis is redundant here
-        float[] plainDirtTextureIndices = new float[] {
-                0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0,
-        };
-
-        float[] plainGrassTextureIndices = new float[] {
-                1, 1, 1, 1, 1, 1,
-                1, 1, 1, 1, 1, 1,
-                1, 1, 1, 1, 1, 1,
-                1, 1, 1, 1, 1, 1,
-                1, 1, 1, 1, 1, 1,
-                1, 1, 1, 1, 1, 1,
-        };
-        DIRT_MODEL = ModelFactory.createTexturedModel(plainGrassTextureIndices, vertices, indices, uv);
-        GRASS_MODEL = ModelFactory.createTexturedModel(plainDirtTextureIndices, vertices, indices, uv);
+        //We need to know it for each vertex
+        float[] plainDirtTextureIndices = new float[24];
+        float[] plainGrassTextureIndices = new float[24];
+        plainGrassTextureIndices[17] = 1.0f;
+        plainGrassTextureIndices[18] = 1.0f;
+        DIRT_MODEL = ModelFactory.createTexturedModel(plainDirtTextureIndices, vertices, indices, uv);
+        GRASS_MODEL = ModelFactory.createTexturedModel(plainGrassTextureIndices, vertices, indices, uv);
 
         Camera camera = new Camera(window);
         shader.start();
@@ -197,11 +186,11 @@ public class RadonClient {
                                 List<Block> entities = new ArrayList<>();
                                 for (Block block : chunkColumn.getBlocks()) {
                                     if (block.getPosition().y == 0) {
-                                        if (x == 0 && z == 0) {
-                                            block.setType(BlockTypes.DIRT);
-                                        } else {
+                                        //if (x == 0 && z == 0) {
+                                          //  block.setType(BlockTypes.DIRT);
+                                        //} else {
                                             block.setType(BlockTypes.GRASS);
-                                        }
+                                        //}
                                     } else {
                                         block.setType(BlockTypes.AIR);
                                     }
