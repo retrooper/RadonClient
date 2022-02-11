@@ -122,13 +122,16 @@ public class RadonClient {
                 23, 21, 22
         };
 
-        TEXTURES = TextureFactory.loadTextureArray(128, 128, "dirt.png", "grass.png");
+        TEXTURES = TextureFactory.loadTextureArray(128, 128, "dirt.png", "top_grass.png");
         //Second axis is redundant here
         //We need to know it for each vertex
-        float[] plainDirtTextureIndices = new float[24];
-        float[] plainGrassTextureIndices = new float[24];
-        plainGrassTextureIndices[17] = 1.0f;
-        plainGrassTextureIndices[18] = 1.0f;
+        int[] plainDirtTextureIndices = new int[24];
+        int[] plainGrassTextureIndices = new int[24];
+        for (int i = 0; i < 24; i++) {
+            plainGrassTextureIndices[i] = 1;
+        }
+        plainGrassTextureIndices[17] = 1;
+        plainGrassTextureIndices[18] = 1;
         DIRT_MODEL = ModelFactory.createTexturedModel(plainDirtTextureIndices, vertices, indices, uv);
         GRASS_MODEL = ModelFactory.createTexturedModel(plainGrassTextureIndices, vertices, indices, uv);
 
@@ -186,11 +189,11 @@ public class RadonClient {
                                 List<Block> entities = new ArrayList<>();
                                 for (Block block : chunkColumn.getBlocks()) {
                                     if (block.getPosition().y == 0) {
-                                        //if (x == 0 && z == 0) {
-                                          //  block.setType(BlockTypes.DIRT);
-                                        //} else {
+                                        if (x == 0 && z == 0) {
+                                            block.setType(BlockTypes.DIRT);
+                                        } else {
                                             block.setType(BlockTypes.GRASS);
-                                        //}
+                                        }
                                     } else {
                                         block.setType(BlockTypes.AIR);
                                     }
@@ -256,7 +259,7 @@ public class RadonClient {
                 } else {
                     Block block = ChunkHelper.getBlockAt(targetLocation);
                     System.out.println("Currently there: " + block.getType().name());
-                    block.setType(BlockTypes.GRASS);
+                    block.setType(BlockTypes.DIRT);
                 }
             } else if (InputUtil.isKeyDown(GLFW_KEY_P)) {
                 Vector3f targetLocation = new Vector3f(camera.getPosition()).add(new Vector3f(camera.getFrontDirection()).mul(2.0f));

@@ -12,7 +12,7 @@ public class ModelFactory {
     public static final List<Integer> VBOS = new ArrayList<>();
     public static final List<Integer> TEXTURES = new ArrayList<>();
 
-    public static Model createTexturedModel(float[] textureIndices, float[] vertices, int[] indices, float[] uv) {
+    public static Model createTexturedModel(int[] textureIndices, float[] vertices, int[] indices, float[] uv) {
         int vaoId = glGenVertexArrays();
         VAOS.add(vaoId);
         glBindVertexArray(vaoId);
@@ -22,7 +22,7 @@ public class ModelFactory {
         //Attribute 1 in VAO (texture coordinates)
         storeFloatsInVAO(uv, 1, 2);
         //Attribute 2 in VAO (texture index)
-        storeFloatsInVAO(textureIndices, 2, 1);
+        storeIntsInVAO(textureIndices, 2, 1);
         //Unbind current vaoID
         glBindVertexArray(0);
         return new Model(vaoId, indices.length);
@@ -55,7 +55,7 @@ public class ModelFactory {
         VBOS.add(vboId);
         glBindBuffer(GL_ARRAY_BUFFER, vboId);
         glBufferData(GL_ARRAY_BUFFER, data, GL_STATIC_DRAW);
-        glVertexAttribPointer(attributeIndex, dimensions, GL_UNSIGNED_BYTE, false, 0, 0);
+        glVertexAttribIPointer(attributeIndex, dimensions, GL_INT, 0, 0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 
