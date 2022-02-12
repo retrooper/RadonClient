@@ -15,13 +15,12 @@ import com.github.retrooper.radonclient.window.Resolution;
 import com.github.retrooper.radonclient.window.Window;
 import com.github.retrooper.radonclient.world.block.Block;
 import com.github.retrooper.radonclient.world.block.BlockTypes;
-import com.github.retrooper.radonclient.world.chunk.ChunkColumn;
+import com.github.retrooper.radonclient.world.chunk.Chunk;
 import com.github.retrooper.radonclient.world.chunk.ChunkHelper;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFWErrorCallback;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -153,7 +152,7 @@ public class RadonClient {
                 if (currentTime - lastCleanupTime > 500L) {
                     List<Long> toRemove = new ArrayList<>();
                     for (long columnId : renderedColumns.keySet()) {
-                        ChunkColumn column = ChunkHelper.getChunkColumns().get(columnId);
+                        Chunk column = ChunkHelper.getChunks().get(columnId);
                         if (column != null) {
                             int columnDistX = Math.abs(column.getX() - (floor(camera.getPosition().x) >> 4));
                             int columnDistZ = Math.abs(column.getZ() - (floor(camera.getPosition().z) >> 4));
@@ -182,12 +181,12 @@ public class RadonClient {
                     for (int x = minX; x <= maxX; x++) {
                         for (int z = minZ; z <= maxZ; z++) {
                             long columnId = ChunkHelper.serializeChunkXZ(x, z);
-                            ChunkColumn chunkColumn = ChunkHelper.getChunkColumns().get(columnId);
-                            if (chunkColumn == null) {
+                            Chunk chunk = ChunkHelper.getChunks().get(columnId);
+                            if (chunk == null) {
                                 //Make it since it does not exist
-                                chunkColumn = new ChunkColumn(x, z, 256);
+                                chunk = new Chunk(x, z, 256);
                                 List<Block> entities = new ArrayList<>();
-                                for (Block block : chunkColumn.getBlocks()) {
+                                for (Block block : chunk.getBlocks()) {
                                     if (block.getPosition().y == 0) {
                                         if (x == 0 && z == 0) {
                                             block.setType(BlockTypes.DIRT);
@@ -199,7 +198,7 @@ public class RadonClient {
                                     }
                                     entities.add(block);
                                 }
-                                ChunkHelper.getChunkColumns().put(columnId, chunkColumn);
+                                ChunkHelper.getChunks().put(columnId, chunk);
                                 //Cache block entities
                                 renderedColumns.put(columnId, entities);
                                 System.out.println("Created chunk column at " + x + ", " + z);
@@ -207,7 +206,7 @@ public class RadonClient {
                             //It is stored, no need to regenerate.
                             else if (!renderedColumns.containsKey(columnId)) {
                                 List<Block> entities = new ArrayList<>();
-                                for (Block block : chunkColumn.getBlocks()) {
+                                for (Block block : chunk.getBlocks()) {
                                     if (!block.getType().equals(BlockTypes.AIR)) {
                                         entities.add(block);
                                     }
