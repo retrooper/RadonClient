@@ -16,18 +16,26 @@ public class Entity {
     private Vector3f position;
     private Vector3f rotation;
 
-    public Entity(final Model model, final Vector3i position, final Vector3f rotation, final float scale) {
+    public Entity(Model model, Vector3i position, Vector3f rotation, float scale) {
         this.model = model;
         this.position = new Vector3f(position.x, position.y, position.z);
         this.rotation = rotation;
         this.scale = scale;
     }
 
-    public Entity(final Model model, final Vector3f position, final Vector3f rotation, final float scale) {
+    public Entity(Model model, Vector3f position, Vector3f rotation, float scale) {
         this.model = model;
         this.position = position;
         this.rotation = rotation;
         this.scale = scale;
+    }
+
+    public Entity(Model model, int x, int y, int z, Vector3f rotation, float scale) {
+        this(model, new Vector3f(x, y, z), rotation, scale);
+    }
+
+    public Entity(Model model, float x, float y, float z, Vector3f rotation, float scale) {
+        this(model, new Vector3f(x, y, z), rotation, scale);
     }
 
     public Model getModel() {
@@ -61,5 +69,17 @@ public class Entity {
                 .rotate(toRadians(rotation.y), Y_AXIS)
                 .rotate(toRadians(rotation.z), Z_AXIS)
                 .scale(scale);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj instanceof Entity entity) {
+            return model.getVaoId() == entity.model.getVaoId() &&
+                    scale == entity.scale &&
+                    position.equals(entity.position) &&
+                    rotation.equals(entity.rotation);
+        }
+        return false;
     }
 }

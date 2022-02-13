@@ -11,22 +11,23 @@ import com.github.retrooper.radonclient.renderer.Renderer;
 import com.github.retrooper.radonclient.shader.StaticShader;
 import com.github.retrooper.radonclient.texture.Texture;
 import com.github.retrooper.radonclient.texture.TextureFactory;
+import com.github.retrooper.radonclient.util.MathUtil;
 import com.github.retrooper.radonclient.window.Resolution;
 import com.github.retrooper.radonclient.window.Window;
 import com.github.retrooper.radonclient.world.block.Block;
+import com.github.retrooper.radonclient.world.block.BlockType;
 import com.github.retrooper.radonclient.world.block.BlockTypes;
 import com.github.retrooper.radonclient.world.chunk.Chunk;
 import com.github.retrooper.radonclient.world.chunk.ChunkHelper;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFWErrorCallback;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.github.retrooper.radonclient.util.MathUtil.floor;
 import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.nanovg.NanoVG.*;
 
 public class RadonClient {
     public static final RadonClient INSTANCE = new RadonClient();
@@ -34,7 +35,7 @@ public class RadonClient {
     private final EntityRenderer renderer = new EntityRenderer();
     private final StaticShader shader = new StaticShader();
     private float deltaTime = 0.0f;
-    private final Map<Long, List<Block>> renderedColumns = new ConcurrentHashMap<>();
+    private final Map<Long, Map<Model, Set<Entity>>> renderedChunks = new ConcurrentHashMap<>();
     public static Texture TEXTURES;
     public static Model DIRT_MODEL;
     public static Model GRASS_MODEL;
@@ -142,7 +143,7 @@ public class RadonClient {
 
         float lastFrameTime = (float) glfwGetTime();
         int frameCount = 0;
-        int fps = 0;
+        int fps;
         float lastSecondTime = lastFrameTime;
         int chunkRenderDistance = 1;
         Thread terrainCleanupThread = new Thread(() -> {
@@ -151,8 +152,8 @@ public class RadonClient {
                 long currentTime = System.currentTimeMillis();
                 if (currentTime - lastCleanupTime > 500L) {
                     List<Long> toRemove = new ArrayList<>();
-                    for (long columnId : renderedColumns.keySet()) {
-                        Chunk column = ChunkHelper.getChunks().get(columnId);
+                    for (long columnId : renderedChunks.keySet()) {
+                        Chunk column = ChunkHelper.getChunkByLong(columnId);
                         if (column != null) {
                             int columnDistX = Math.abs(column.getX() - (floor(camera.getPosition().x) >> 4));
                             int columnDistZ = Math.abs(column.getZ() - (floor(camera.getPosition().z) >> 4));
@@ -163,7 +164,7 @@ public class RadonClient {
                         }
                     }
                     for (long columnId : toRemove) {
-                        renderedColumns.remove(columnId);
+                        renderedChunks.remove(columnId);
                     }
                     lastCleanupTime = System.currentTimeMillis();
                 }
@@ -174,44 +175,54 @@ public class RadonClient {
             while (window.isOpen()) {
                 long now = System.currentTimeMillis();
                 if (now - lastTime >= 500L) {
-                    int minX = (floor(camera.getPosition().x) >> 4) - chunkRenderDistance;
-                    int minZ = (floor(camera.getPosition().z) >> 4) - chunkRenderDistance;
-                    int maxX = (floor(camera.getPosition().x) >> 4) + chunkRenderDistance;
-                    int maxZ = (floor(camera.getPosition().z) >> 4) + chunkRenderDistance;
+                    int minX = (camera.getBlockPosX() >> 4) - chunkRenderDistance;
+                    int minZ = (camera.getBlockPosZ() >> 4) - chunkRenderDistance;
+                    int maxX = (camera.getBlockPosX() >> 4) + chunkRenderDistance;
+                    int maxZ = (camera.getBlockPosZ() >> 4) + chunkRenderDistance;
                     for (int x = minX; x <= maxX; x++) {
                         for (int z = minZ; z <= maxZ; z++) {
                             long columnId = ChunkHelper.serializeChunkXZ(x, z);
-                            Chunk chunk = ChunkHelper.getChunks().get(columnId);
+                            Chunk chunk = ChunkHelper.getChunkByLong(columnId);
                             if (chunk == null) {
                                 //Make it since it does not exist
                                 chunk = new Chunk(x, z, 256);
-                                List<Block> entities = new ArrayList<>();
-                                for (Block block : chunk.getBlocks()) {
-                                    if (block.getPosition().y == 0) {
-                                        if (x == 0 && z == 0) {
+                                int finalX = x;
+                                int finalZ = z;
+                                chunk.handlePerBlock(block -> {
+                                    if (block.getY() == 0) {
+                                        if (finalX == 0 && finalZ == 0) {
                                             block.setType(BlockTypes.DIRT);
                                         } else {
                                             block.setType(BlockTypes.GRASS);
                                         }
-                                    } else {
-                                        block.setType(BlockTypes.AIR);
                                     }
-                                    entities.add(block);
+                                });
+                                chunk.updateBlockFaces();
+                                ChunkHelper.addChunk(chunk);
+                                Map<Model, Set<Entity>> renderedModels = new ConcurrentHashMap<>();
+                                for (Block block : chunk.getBlocks()) {
+                                    if (block.getType().equals(BlockTypes.AIR)) continue;
+                                    if (!block.isOneFaceVisible()) continue;
+                                    Entity entity = block.asEntity();
+                                    renderedModels.computeIfAbsent(entity.getModel(), k -> new HashSet<>())
+                                            .add(entity);
                                 }
-                                ChunkHelper.getChunks().put(columnId, chunk);
                                 //Cache block entities
-                                renderedColumns.put(columnId, entities);
+                                renderedChunks.put(columnId, renderedModels);
                                 System.out.println("Created chunk column at " + x + ", " + z);
                             }
                             //It is stored, no need to regenerate.
-                            else if (!renderedColumns.containsKey(columnId)) {
-                                List<Block> entities = new ArrayList<>();
+                            else if (!renderedChunks.containsKey(columnId)) {
+                                Map<Model, Set<Entity>> renderedModels = new ConcurrentHashMap<>();
                                 for (Block block : chunk.getBlocks()) {
-                                    if (!block.getType().equals(BlockTypes.AIR)) {
-                                        entities.add(block);
-                                    }
+                                    if (block.getType().equals(BlockTypes.AIR)) continue;
+                                    if (!block.isOneFaceVisible()) continue;
+                                    Entity entity = block.asEntity();
+                                    renderedModels.computeIfAbsent(entity.getModel(), k -> new HashSet<>())
+                                            .add(entity);
                                 }
-                                renderedColumns.put(columnId, entities);
+                                //Cache block entities
+                                renderedChunks.put(columnId, renderedModels);
                                 //System.out.println("Restored chunk column at " + x + ", " + z);
                             }
                         }
@@ -243,22 +254,77 @@ public class RadonClient {
 
             if (InputUtil.isMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT)) {
                 //System.out.println("Change 1 0 0 to grass!");
-                Vector3f targetLocation = new Vector3f(camera.getPosition()).add(new Vector3f(camera.getFrontDirection()).mul(2.0f));
-                if (targetLocation.y < 0) {
-                    System.out.println("Y too low!");
-                } else {
-                    Block block = ChunkHelper.getBlockAt(targetLocation);
-                    System.out.println("Currently there: " + block.getType().name());
-                    block.setType(BlockTypes.AIR);
+                System.out.println("Cam pos: " + camera.getPosition().x + ", " + camera.getPosition().y + ", " + camera.getPosition().z);
+                int blockReach = 3;
+                Vector3f headPos = new Vector3f(camera.getPosition()).add(0, 1, 0);
+                Vector3f endLocation = new Vector3f(headPos).add(new Vector3f(camera.getFrontDirection()).mul(blockReach));
+                Vector3f currentLocation = new Vector3f(headPos);
+                float dist = currentLocation.distance(endLocation);
+                int blocksAhead = MathUtil.floor(dist);
+                if (blocksAhead > 3) {
+                    blocksAhead = blockReach;
                 }
+                Block targetBlock = null;
+                for (int i = -1; i < blocksAhead; i++) {
+                    currentLocation.add(new Vector3f(camera.getFrontDirection()).mul(1.0f));
+                    Block block = ChunkHelper.getBlockAt(currentLocation.x, currentLocation.y, currentLocation.z);
+                    if (block != null && !block.getType().equals(BlockTypes.AIR)) {
+                        targetBlock = block;
+                        break;
+                    }
+                }
+                if (targetBlock != null && targetBlock.isOneFaceVisible()) {
+                    //Its already visible, no need to add to the rendered entities list.
+                    long chunkId = ChunkHelper.serializeChunkXZ(camera.getBlockPosX() >> 4, camera.getBlockPosZ() >> 4);
+                    Map<Model, Set<Entity>> renderedModels = renderedChunks.get(chunkId);
+                    if (renderedModels != null) {
+                        Set<Entity> entities = renderedModels.get(targetBlock.asModel());
+                        if (entities != null) {
+                            Block finalTargetBlock = targetBlock;
+                            entities.removeIf(entity -> entity.equals(finalTargetBlock.asEntity()));
+                            System.out.println("Destroyed: " + targetBlock.getType().name());
+                            targetBlock.setType(BlockTypes.AIR);
+                        }
+                    }
+
+                }
+                //TODO Add to rendered column if not visible
             } else if (InputUtil.isMouseButtonDown(GLFW_MOUSE_BUTTON_RIGHT)) {
+                BlockType placedBlockType = BlockTypes.DIRT;
                 Vector3f targetLocation = new Vector3f(camera.getPosition()).add(new Vector3f(camera.getFrontDirection()).mul(2.0f));
                 if (targetLocation.y < 0) {
                     System.out.println("Y too low!");
                 } else {
-                    Block block = ChunkHelper.getBlockAt(targetLocation);
-                    System.out.println("Currently there: " + block.getType().name());
-                    block.setType(BlockTypes.DIRT);
+                    Block block = ChunkHelper.getBlockAt(targetLocation.x, targetLocation.y, targetLocation.z);
+                    if (block.getType().equals(BlockTypes.AIR)) {
+                        long chunkId = ChunkHelper.serializeChunkXZ(camera.getBlockPosX() >> 4, camera.getBlockPosZ() >> 4);
+                        Map<Model, Set<Entity>> renderedModels = renderedChunks.get(chunkId);
+                        Set<Entity> entities;
+                        if (renderedModels != null) {
+                            block.setType(placedBlockType);
+                            entities = renderedModels.get(block.asModel());
+                            //Lets add ourselves to the set of blocks of our own type.
+                            if (entities != null) {
+                                entities.add(block.asEntity());
+                            } else {
+                                //No other blocks of our block type in this chunk. We are the first!
+                                entities = new HashSet<>();
+                                entities.add(block.asEntity());
+                                renderedModels.put(block.asModel(), entities);
+                            }
+                        } else {
+                            //No other blocks in this chunk.
+                            block.setType(placedBlockType);
+                            entities = new HashSet<>();
+                            entities.add(block.asEntity());
+                            renderedModels = new HashMap<>();
+                            renderedModels.put(block.asModel(), entities);
+                            renderedChunks.put(chunkId, renderedModels);
+                        }
+                        block.setAllFacesVisible();
+                        //ChunkHelper.setBlockAt(block.getX(), block.getY(), block.getZ(), block);
+                        System.out.println("Placed: " + block.getType().name());
+                    }
                 }
             } else if (InputUtil.isKeyDown(GLFW_KEY_P)) {
                 Vector3f targetLocation = new Vector3f(camera.getPosition()).add(new Vector3f(camera.getFrontDirection()).mul(2.0f));
@@ -272,15 +338,33 @@ public class RadonClient {
             Renderer.prepare();
             shader.start();
             shader.updateViewMatrix(camera.createViewMatrix());
-            for (List<Block> columnEntities : renderedColumns.values()) {
-                for (Block e : columnEntities) {
-                    if (e.getType().equals(BlockTypes.AIR)) continue;
-                    Model model = e.getType().equals(BlockTypes.GRASS) ? GRASS_MODEL : DIRT_MODEL;
-                    Entity entity = new Entity(model, e.getPosition(), new Vector3f(0, 0, 0), 1.0f);
-                    renderer.render(TEXTURES, shader, entity);
+            for (Map<Model, Set<Entity>> map : renderedChunks.values()) {
+                for (Model model : map.keySet()) {
+                    Set<Entity> entities = map.get(model);
+                    if (entities.isEmpty()) continue;
+                    renderer.render(TEXTURES, shader, model, entities);
                 }
             }
             shader.stop();
+
+            //Render cursor
+            int[] width = new int[1];
+            int[] height = new int[1];
+            glfwGetWindowSize(window.getHandle(), width, height);
+            int[] frameBufferWidth = new int[1];
+            int[] frameBufferHeight = new int[1];
+            glfwGetFramebufferSize(window.getHandle(), frameBufferWidth, frameBufferHeight);
+            float pxRatio = (float) frameBufferWidth[0] / (float) width[0];
+
+            //glViewport(0, 0, width[0], height[0]);
+            nvgBeginFrame(window.vgHandle, window.getResolution().getWidth(), window.getResolution().getHeight(), pxRatio);
+            nvgBeginPath(window.vgHandle);
+            nvgFontSize(window.vgHandle, 50.0f);
+            nvgFontFace(window.vgHandle, "retrooper");
+            nvgTextAlign(window.vgHandle, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+            nvgText(window.vgHandle, width[0] / 2, height[0] / 2, "+");
+            nvgFill(window.vgHandle);
+            nvgEndFrame(window.vgHandle);
             window.update();
             float currentTime = (float) glfwGetTime();
 

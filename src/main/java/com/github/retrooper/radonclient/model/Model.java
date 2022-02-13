@@ -16,4 +16,13 @@ public class Model {
     public int getIndicesCount() {
         return indicesCount;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj instanceof Model model) {
+            return vaoId == model.vaoId && indicesCount == model.indicesCount;
+        }
+        return false;
+    }
 }

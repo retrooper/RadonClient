@@ -1,5 +1,6 @@
 package com.github.retrooper.radonclient.entity.player;
 
+import com.github.retrooper.radonclient.util.MathUtil;
 import com.github.retrooper.radonclient.window.Window;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -100,15 +101,15 @@ public class Camera {
     }
 
     public int getBlockPosX() {
-        return (int) position.x;
+        return MathUtil.floor(position.x);
     }
 
     public int getBlockPosY() {
-        return (int) position.y;
+        return  MathUtil.floor(position.y);
     }
 
     public int getBlockPosZ() {
-        return (int) position.z;
+        return MathUtil.floor(position.z);
     }
 
     public void setPosition(Vector3f position) {

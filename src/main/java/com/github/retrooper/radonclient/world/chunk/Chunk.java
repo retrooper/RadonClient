@@ -1,10 +1,8 @@
 package com.github.retrooper.radonclient.world.chunk;
 
-import com.github.retrooper.radonclient.RadonClient;
-import com.github.retrooper.radonclient.entity.Entity;
 import com.github.retrooper.radonclient.world.block.Block;
+import com.github.retrooper.radonclient.world.block.BlockFace;
 import com.github.retrooper.radonclient.world.block.BlockTypes;
-import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,7 +19,7 @@ public class Chunk {
         this.chunkSections = chunkSections;
     }
 
-    //maxHeight must be multiple of 256
+    //maxHeight must be multiple of 16
     public Chunk(int x, int z, int maxHeight) {
         this.x = x;
         this.z = z;
@@ -31,7 +29,7 @@ public class Chunk {
         }
     }
 
-    public ChunkSection[] getChunks() {
+    public ChunkSection[] getChunkSections() {
         return chunkSections;
     }
 
@@ -49,18 +47,18 @@ public class Chunk {
 
     //X(0-15), Y(0-255), Z(0-15)
     public Block getBlock(int x, int y, int z) {
-        ChunkSection chunkSection = getChunks()[y >> 4];
+        ChunkSection chunkSection = getChunkSections()[y >> 4];
         return chunkSection.getBlock(x & 15, y & 15, z & 15);
     }
 
     //X(0-15), Y(0-15), Z(0-15)
     public void setBlock(int x, int y, int z, Block block) {
-        ChunkSection chunkSection = getChunks()[y >> 4];
+        ChunkSection chunkSection = getChunkSections()[y >> 4];
         chunkSection.setBlock(x & 15, y & 15, z & 15, block);
     }
 
     public void handlePerChunk(Consumer<ChunkSection> consumer) {
-        for (ChunkSection chunkSection : getChunks()) {
+        for (ChunkSection chunkSection : getChunkSections()) {
             consumer.accept(chunkSection);
         }
     }
@@ -68,8 +66,7 @@ public class Chunk {
     public void handlePerBlock(Consumer<Block> consumer) {
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {
-                for (int chunkIndex = 0; chunkIndex < chunkSections.length; chunkIndex++) {
-                    ChunkSection chunkSection = chunkSections[chunkIndex];
+                for (ChunkSection chunkSection : chunkSections) {
                     for (int y = 0; y < 16; y++) {
                         Block block = chunkSection.getBlock(x, y, z);
                         consumer.accept(block);
@@ -79,38 +76,54 @@ public class Chunk {
         }
     }
 
-    public List<Entity> getEntities() {
-        List<Entity> entities = new ArrayList<>();
-        for (int x = 0; x < 16; x++) {
-            for (int z = 0; z < 16; z++) {
-                for (ChunkSection chunkSection : chunkSections) {
-                    for (int y = 0; y < 16; y++) {
-                        Block block = chunkSection.getBlock(x, y, z);
-                        if (block.getType().equals(BlockTypes.AIR))continue;
-                        //TODO Make accurate model (store in block)
-                        Entity entity = new Entity(RadonClient.GRASS_MODEL,
-                                block.getPosition(),
-                                new Vector3f(),
-                                1.0f);
-                        entities.add(entity);
-                    }
-                }
-            }
-        }
-        return entities;
-    }
-
     public List<Block> getBlocks() {
         List<Block> blocks = new ArrayList<>();
+        for (ChunkSection chunkSection : chunkSections) {
+            blocks.addAll(chunkSection.getBlocks());
+        }
+        return blocks;
+    }
+
+    public void updateBlockFaces() {
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {
-                for (ChunkSection chunkSection : chunkSections) {
-                    for (int y = 0; y < 16; y++) {
-                        blocks.add(chunkSection.getBlock(x, y, z));
+                for (int y = 0; y < 256; y++) {
+                    Block block = getBlock(x, y, z);
+                    if (block.getType().equals(BlockTypes.AIR)) continue;
+                    byte faceMask = 0x00;
+                    if (y == 255 || getBlock(x, y + 1, z).getType().equals(BlockTypes.AIR)) {
+                        faceMask |= BlockFace.TOP.getBit();
+                    }
+
+                    if (y == 0 || getBlock(x, y - 1, z).getType().equals(BlockTypes.AIR)) {
+                        faceMask |= BlockFace.BOTTOM.getBit();
+                    }
+
+                    if (x == 0 || getBlock(x - 1, y, z).getType().equals(BlockTypes.AIR)) {
+                        faceMask |= BlockFace.WEST.getBit();
+                    }
+
+                    if (x == 15 || getBlock(x + 1, y, z).getType().equals(BlockTypes.AIR)) {
+                        faceMask |= BlockFace.EAST.getBit();
+                    }
+
+                    if (z == 15 || getBlock(x, y, z + 1).getType().equals(BlockTypes.AIR)) {
+                        faceMask |= BlockFace.NORTH.getBit();
+                    }
+
+                    if (z == 0 || getBlock(x, y, z - 1).getType().equals(BlockTypes.AIR)) {
+                        faceMask |= BlockFace.SOUTH.getBit();
+                    }
+
+                    for (BlockFace face : BlockFace.values()) {
+                        if ((faceMask & face.getBit()) != 0) {
+                            block.setFaceVisible(face);
+                        } else {
+                            block.setFaceInvisible(face);
+                        }
                     }
                 }
             }
         }
-        return blocks;
     }
 }

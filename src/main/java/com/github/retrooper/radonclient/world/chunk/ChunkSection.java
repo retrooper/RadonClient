@@ -2,7 +2,6 @@ package com.github.retrooper.radonclient.world.chunk;
 
 import com.github.retrooper.radonclient.world.block.Block;
 import com.github.retrooper.radonclient.world.block.BlockTypes;
-import org.joml.Vector3i;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,8 +25,7 @@ public class ChunkSection {
                     int globalX = (x << 4) | w;
                     int globalY = (y << 4) | h;
                     int globalZ = (z << 4) | l;
-                    Vector3i blockPos = new Vector3i(globalX, globalY, globalZ);
-                    this.blocks[w][l][h] = new Block(BlockTypes.AIR, blockPos);
+                    this.blocks[w][l][h] = new Block(BlockTypes.AIR, globalX, globalY, globalZ);
                 }
             }
         }

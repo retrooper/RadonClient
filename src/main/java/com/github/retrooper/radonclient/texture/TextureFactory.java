@@ -13,7 +13,7 @@ import static org.lwjgl.opengl.GL12.*;
 import static org.lwjgl.opengl.GL30.GL_TEXTURE_2D_ARRAY;
 
 public class TextureFactory {
-    private static ByteBuffer loadTextureAsBuffer(String fileName) {
+    public static ByteBuffer loadTextureAsBuffer(String fileName) {
         PNGDecoder decoder;
         try {
             InputStream in = TextureFactory.class.getClassLoader().getResourceAsStream(fileName);

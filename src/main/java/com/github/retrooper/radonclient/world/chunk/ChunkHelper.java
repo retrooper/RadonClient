@@ -10,8 +10,12 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ChunkHelper {
     private static final Map<Long, Chunk> CHUNKS = new ConcurrentHashMap<>();
 
-    public static Map<Long, Chunk> getChunks() {
-        return CHUNKS;
+    public static Chunk getChunkByLong(long serializedId) {
+        return CHUNKS.get(serializedId);
+    }
+
+    public static void addChunk(Chunk chunk) {
+        CHUNKS.put(serializeChunkXZ(chunk.getX(), chunk.getZ()), chunk);
     }
 
     public static long serializeChunkXZ(int x, int z) {
@@ -24,16 +28,26 @@ public class ChunkHelper {
 
     public static ChunkSection getChunkSectionAt(int x, int y, int z) {
         Chunk column = getChunkAt(x, z);
-        return column.getChunks()[y >> 4];
+        if (column != null) {
+            return column.getChunkSections()[y >> 4];
+        }
+        return null;
     }
 
-    public static Block getBlockAt(Vector3f position) {
-        return getBlockAt(MathUtil.floor(position.x), MathUtil.floor(position.y), MathUtil.floor(position.z));
+    public static Block getBlockAt(float x, float y, float z) {
+        if (y < 0) {
+            //TODO Support
+            return null;
+        }
+        return getBlockAt(MathUtil.floor(x), MathUtil.floor(y), MathUtil.floor(z));
     }
 
     public static Block getBlockAt(int x, int y, int z) {
         ChunkSection chunkSection = getChunkSectionAt(x, y, z);
-        return chunkSection.getBlock(x & 15, y & 15, z & 15);
+        if (chunkSection != null) {
+            return chunkSection.getBlock(x & 15, y & 15, z & 15);
+        }
+        return null;
     }
 
     public static void setBlockAt(int x, int y, int z, Block block) {
