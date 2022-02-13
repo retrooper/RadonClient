@@ -100,6 +100,18 @@ public class Camera {
         return position;
     }
 
+    public int getChunkX() {
+        return getBlockPosX() >> 4;
+    }
+
+    public int getChunkZ() {
+        return getBlockPosZ() >> 4;
+    }
+
+    public int getChunkY() {
+        return getBlockPosY() >> 4;
+    }
+
     public int getBlockPosX() {
         return MathUtil.floor(position.x);
     }

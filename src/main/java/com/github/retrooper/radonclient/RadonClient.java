@@ -122,16 +122,28 @@ public class RadonClient {
                 23, 21, 22
         };
 
-        TEXTURES = TextureFactory.loadTextureArray(128, 128, "dirt.png", "top_grass.png");
+        TEXTURES = TextureFactory.loadTextureArray(128, 128, "bottom_grass.png", "top_grass.png", "side_grass.png");
         //Second axis is redundant here
         //We need to know it for each vertex
+        //Default is bottom_grass, fitting for dirt
         int[] plainDirtTextureIndices = new int[24];
+
         int[] plainGrassTextureIndices = new int[24];
-        for (int i = 0; i < 24; i++) {
-            plainGrassTextureIndices[i] = 1;
-        }
+        //Set top face to index 1
         plainGrassTextureIndices[17] = 1;
         plainGrassTextureIndices[18] = 1;
+        plainGrassTextureIndices[19] = 1;
+
+        //Set bottom face to index 0
+        plainDirtTextureIndices[22] = 0;
+        plainDirtTextureIndices[23] = 0;
+
+        for (int i = 0; i < plainGrassTextureIndices.length; i++) {
+            if (i != 17 && i != 18 && i != 19 && i != 22 && i != 23) {
+                plainGrassTextureIndices[i] = 2;
+            }
+        }
+
         DIRT_MODEL = ModelFactory.createTexturedModel(plainDirtTextureIndices, vertices, indices, uv);
         GRASS_MODEL = ModelFactory.createTexturedModel(plainGrassTextureIndices, vertices, indices, uv);
 
@@ -145,7 +157,7 @@ public class RadonClient {
         int frameCount = 0;
         int fps;
         float lastSecondTime = lastFrameTime;
-        int chunkRenderDistance = 1;
+        int chunkRenderDistance = 2;
         Thread terrainCleanupThread = new Thread(() -> {
             long lastCleanupTime = System.currentTimeMillis();
             while (window.isOpen()) {
@@ -175,10 +187,10 @@ public class RadonClient {
             while (window.isOpen()) {
                 long now = System.currentTimeMillis();
                 if (now - lastTime >= 500L) {
-                    int minX = (camera.getBlockPosX() >> 4) - chunkRenderDistance;
-                    int minZ = (camera.getBlockPosZ() >> 4) - chunkRenderDistance;
-                    int maxX = (camera.getBlockPosX() >> 4) + chunkRenderDistance;
-                    int maxZ = (camera.getBlockPosZ() >> 4) + chunkRenderDistance;
+                    int minX = camera.getChunkX() - chunkRenderDistance;
+                    int minZ = camera.getChunkZ() - chunkRenderDistance;
+                    int maxX = camera.getChunkX() + chunkRenderDistance;
+                    int maxZ = camera.getChunkZ() + chunkRenderDistance;
                     for (int x = minX; x <= maxX; x++) {
                         for (int z = minZ; z <= maxZ; z++) {
                             long columnId = ChunkHelper.serializeChunkXZ(x, z);
@@ -290,7 +302,7 @@ public class RadonClient {
                 }
                 //TODO Add to rendered column if not visible
             } else if (InputUtil.isMouseButtonDown(GLFW_MOUSE_BUTTON_RIGHT)) {
-                BlockType placedBlockType = BlockTypes.DIRT;
+                BlockType placedBlockType = BlockTypes.GRASS;
                 Vector3f targetLocation = new Vector3f(camera.getPosition()).add(new Vector3f(camera.getFrontDirection()).mul(2.0f));
                 if (targetLocation.y < 0) {
                     System.out.println("Y too low!");
@@ -362,7 +374,7 @@ public class RadonClient {
             nvgFontSize(window.vgHandle, 50.0f);
             nvgFontFace(window.vgHandle, "retrooper");
             nvgTextAlign(window.vgHandle, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-            nvgText(window.vgHandle, width[0] / 2, height[0] / 2, "+");
+            //nvgText(window.vgHandle, width[0] / 2, height[0] / 2, ".");
             nvgFill(window.vgHandle);
             nvgEndFrame(window.vgHandle);
             window.update();
@@ -375,7 +387,6 @@ public class RadonClient {
             frameCount++;
             if (currentTime - lastSecondTime >= 1.0) {
                 fps = frameCount;
-                //System.out.println("Cam pos: " + camera.getPosition().x + ", " + camera.getPosition().y + ", " + camera.getPosition().z);
                 System.out.println("FPS: " + fps);
                 frameCount = 0;
                 lastSecondTime = currentTime;
