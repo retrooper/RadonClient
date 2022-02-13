@@ -15,7 +15,7 @@ public class ChunkHelper {
     }
 
     public static void addChunk(Chunk chunk) {
-        CHUNKS.put(serializeChunkXZ(chunk.getX(), chunk.getZ()), chunk);
+        CHUNKS.put(chunk.serialize(), chunk);
     }
 
     public static long serializeChunkXZ(int x, int z) {

@@ -167,8 +167,8 @@ public class RadonClient {
                     for (long columnId : renderedChunks.keySet()) {
                         Chunk column = ChunkHelper.getChunkByLong(columnId);
                         if (column != null) {
-                            int columnDistX = Math.abs(column.getX() - (floor(camera.getPosition().x) >> 4));
-                            int columnDistZ = Math.abs(column.getZ() - (floor(camera.getPosition().z) >> 4));
+                            int columnDistX = Math.abs(column.getX() - camera.getChunkX());
+                            int columnDistZ = Math.abs(column.getZ() - camera.getChunkZ());
                             if (columnDistX > chunkRenderDistance || columnDistZ > chunkRenderDistance) {
                                 toRemove.add(columnId);
                                 //System.out.println("Removing " + column.getX() + ", " + column.getZ());
@@ -309,7 +309,7 @@ public class RadonClient {
                 } else {
                     Block block = ChunkHelper.getBlockAt(targetLocation.x, targetLocation.y, targetLocation.z);
                     if (block.getType().equals(BlockTypes.AIR)) {
-                        long chunkId = ChunkHelper.serializeChunkXZ(camera.getBlockPosX() >> 4, camera.getBlockPosZ() >> 4);
+                        long chunkId = ChunkHelper.serializeChunkXZ(camera.getChunkX(), camera.getChunkZ());
                         Map<Model, Set<Entity>> renderedModels = renderedChunks.get(chunkId);
                         Set<Entity> entities;
                         if (renderedModels != null) {
