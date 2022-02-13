@@ -1,6 +1,7 @@
 plugins {
     id 'java'
-    id 'application'
+    //id 'application'
+    id 'com.github.johnrengelman.shadow' version '7.1.0'
 }
 
 group 'com.github.retrooper'
@@ -27,6 +28,16 @@ switch (OperatingSystem.current()) {
                 ? "natives-windows${osArch.startsWith("aarch64") ? "-arm64" : ""}"
                 : "natives-windows-x86"
         break
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'com.github.retrooper.radonclient.Main'
+    }
+}
+
+shadowJar {
+
 }
 
 repositories {

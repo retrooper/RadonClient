@@ -1,9 +1,9 @@
 package com.github.retrooper.radonclient.texture;
 
-public class Texture {
+public class TextureArray {
     private final int id;
 
-    public Texture(int id) {
+    public TextureArray(int id) {
         this.id = id;
     }
 

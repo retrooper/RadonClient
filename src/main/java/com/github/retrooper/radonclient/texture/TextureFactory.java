@@ -33,7 +33,7 @@ public class TextureFactory {
         return buffer;
     }
 
-    public static Texture loadTextureArray(int width, int height, String... fileNames) {
+    public static TextureArray loadTextures(int width, int height, String... fileNames) {
         if (fileNames.length == 0) {
             throw new IllegalStateException("No texture files provided");
         }
@@ -54,6 +54,6 @@ public class TextureFactory {
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
         glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
-        return new Texture(id);
+        return new TextureArray(id);
     }
 }

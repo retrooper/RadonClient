@@ -9,7 +9,7 @@ import com.github.retrooper.radonclient.model.ModelFactory;
 import com.github.retrooper.radonclient.renderer.EntityRenderer;
 import com.github.retrooper.radonclient.renderer.Renderer;
 import com.github.retrooper.radonclient.shader.StaticShader;
-import com.github.retrooper.radonclient.texture.Texture;
+import com.github.retrooper.radonclient.texture.TextureArray;
 import com.github.retrooper.radonclient.texture.TextureFactory;
 import com.github.retrooper.radonclient.util.MathUtil;
 import com.github.retrooper.radonclient.window.Resolution;
@@ -36,7 +36,7 @@ public class RadonClient {
     private final StaticShader shader = new StaticShader();
     private float deltaTime = 0.0f;
     private final Map<Long, Map<Model, Set<Entity>>> renderedChunks = new ConcurrentHashMap<>();
-    public static Texture TEXTURES;
+    public static TextureArray TEXTURES;
     public static Model DIRT_MODEL;
     public static Model GRASS_MODEL;
 
@@ -122,7 +122,7 @@ public class RadonClient {
                 23, 21, 22
         };
 
-        TEXTURES = TextureFactory.loadTextureArray(128, 128, "bottom_grass.png", "top_grass.png", "side_grass.png");
+        TEXTURES = TextureFactory.loadTextures(128, 128, "bottom_grass.png", "top_grass.png", "side_grass.png");
         //Second axis is redundant here
         //We need to know it for each vertex
         //Default is bottom_grass, fitting for dirt
