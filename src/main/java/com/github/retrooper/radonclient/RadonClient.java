@@ -149,6 +149,7 @@ public class RadonClient {
         GRASS_MODEL = ModelFactory.createTexturedModel(plainGrassTextureIndices, vertices, indices, uv);
 
         Camera camera = new Camera(window);
+        renderer.load();
         shader.start();
         shader.updateProjectionMatrix(camera.createProjectionMatrix());
         shader.stop();

@@ -6,16 +6,18 @@ in vec3 position;
 in vec2 uv;
 //Atribute 2
 in int textureIndex;
+//Attribute 3
+in mat4 transformation;
+
 //Uniforms
-uniform mat4 transformationMatrix;
-uniform mat4 projectionMatrix;
-uniform mat4 viewMatrix;
+uniform mat4 projection;
+uniform mat4 view;
 
 out vec2 fragTextureCoords;
 flat out int fragTextureIndex;
 
 void main() {
-    gl_Position =  projectionMatrix * viewMatrix * transformationMatrix * vec4(position, 1.0);
+    gl_Position =  projection * view * transformation * vec4(position, 1.0);
     fragTextureCoords = uv;
     fragTextureIndex = textureIndex;
 }

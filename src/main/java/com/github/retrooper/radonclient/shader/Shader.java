@@ -77,6 +77,7 @@ public abstract class Shader {
         glUniformMatrix4fv(ptr, false, matrix.get(new float[16]));
     }
 
+
     protected int getUniformPointer(String name) {
         return glGetUniformLocation(programId, name);
     }
