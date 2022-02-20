@@ -1,12 +1,18 @@
 package com.github.retrooper.radonclient.entity.player;
 
+import com.github.retrooper.radonclient.RadonClient;
+import com.github.retrooper.radonclient.entity.collision.BoxCollision;
+import com.github.retrooper.radonclient.input.InputUtil;
 import com.github.retrooper.radonclient.util.MathUtil;
 import com.github.retrooper.radonclient.window.Window;
+import com.github.retrooper.radonclient.world.World;
+import com.github.retrooper.radonclient.world.block.Block;
+import com.github.retrooper.radonclient.world.block.BlockTypes;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
-import org.joml.Vector3i;
 
 import static org.joml.Math.*;
+import static org.lwjgl.glfw.GLFW.*;
 
 public class Camera {
     private float aspectRatio;
@@ -22,6 +28,9 @@ public class Camera {
     private float yaw = -90;
     private Vector3f frontDirection = new Vector3f();
     private Vector3f leftDirection = new Vector3f();
+    private Vector3f velocity = new Vector3f();
+    private boolean jumping;
+    private boolean onGround;
 
     public Camera(Window window, Vector3f position, Vector3f rotation, float sensitivity, float fov, float farPlane, float nearPlane) {
         this.position = position;
@@ -45,16 +54,100 @@ public class Camera {
         this(window, new Vector3f(), new Vector3f(), 100.0f);
     }
 
+    public boolean isJumping() {
+        return jumping;
+    }
+
+    public void setJumping(boolean jumping) {
+        this.jumping = jumping;
+    }
+
+    public boolean isOnGround() {
+        return onGround;
+    }
+
+    public void setOnGround(boolean onGround) {
+        this.onGround = onGround;
+    }
+
     public void setMousePos(double x, double y) {
         this.mouseX = x;
         this.mouseY = y;
+    }
+
+    public Vector3f getNextPosition() {
+        return velocity;
+    }
+
+    public void setNextPosition(Vector3f velocity) {
+        this.velocity = velocity;
+    }
+
+    public BoxCollision getCollision() {
+        return new BoxCollision(position, 1.0f, 1.0f);
+    }
+
+    public void update(float deltaTime) {
+        updateRotation();
+        updateOnGround();
+        //Apply gravity when we are not on ground.
+        if (!onGround) {
+            velocity.y -= 200.0f * deltaTime;
+        }
+        handleVelocity(deltaTime);
+        handleKeyPresses(deltaTime);
+    }
+
+    public void updateOnGround() {
+        //onGround = position.y % (1.0f / 64.0f) < 1e-6;
+        Block block = RadonClient.getInstance().getWorld().getHighestBlockAt(getBlockPosX(), getBlockPosZ());
+        if (block != null && block.getType() != BlockTypes.AIR) {
+            float height = block.getY() + 1.0f;
+            if (position.y <= height) {
+                onGround = true;
+                position.y = height;
+            }
+            else {
+                onGround = false;
+            }
+        }
+        else {
+            onGround = false;
+        }
+    }
+
+    public void handleVelocity(float deltaTime) {
+        position.add(velocity.mul(deltaTime));
+    }
+
+    public void handleKeyPresses(float deltaTime) {
+        if (InputUtil.isKeyDown(GLFW_KEY_W)) {
+            move(MoveDirection.FORWARD, 2.0f * deltaTime);
+            if (InputUtil.isKeyDown(GLFW_KEY_LEFT_SHIFT)) {
+                move(MoveDirection.FORWARD, 1.3f * deltaTime);
+            }
+        } else if (InputUtil.isKeyDown(GLFW_KEY_S)) {
+            move(MoveDirection.BACKWARD, 2.0f * deltaTime);
+        }
+
+        if (InputUtil.isKeyDown(GLFW_KEY_A)) {
+            move(MoveDirection.LEFT, 2.0f * deltaTime);
+        } else if (InputUtil.isKeyDown(GLFW_KEY_D)) {
+            move(MoveDirection.RIGHT, 2.0f * deltaTime);
+        }
+
+        if (InputUtil.isKeyDown(GLFW_KEY_SPACE) && isOnGround()) {
+            move(MoveDirection.UP, 4000.0f * deltaTime);
+        } else if (InputUtil.isKeyDown(GLFW_KEY_LEFT_ALT)) {
+            //camera.move(MoveDirection.DOWN, 5f * deltaTime);
+        }
     }
 
     public void updateRotation() {
         double mouseDeltaY = mouseY - lastMouseY;
         double mouseDeltaX = mouseX - lastMouseX;
         float sensFactor = sensitivity / 1000;
-        pitch += (-mouseDeltaY) * sensFactor;
+        pitch -= mouseDeltaY * sensFactor;
         //Must be clamped between -90 and 90
         pitch = clamp(-89.0f, 89.0f, pitch);
         yaw += mouseDeltaX * sensFactor;
@@ -73,26 +166,35 @@ public class Camera {
 
     public void move(MoveDirection direction, float amount) {
         switch (direction) {
-            case FORWARD:
-                Vector3f frontDirClone = new Vector3f(frontDirection.x, 0, frontDirection.z).normalize();
-                position.add(frontDirClone.mul(amount));
+            case FORWARD: {
+                Vector3f delta = getHorizontalFrontDirection().mul(amount);
+                position.add(delta);
+                //velocity.add(delta);
                 break;
-            case BACKWARD:
+            }
+            case BACKWARD: {
                 move(MoveDirection.FORWARD, -amount);
                 break;
-            case LEFT:
-                Vector3f leftDirClone = new Vector3f(leftDirection.x, 0, leftDirection.z).normalize();
-                position.add(leftDirClone.mul(amount));
+            }
+            case LEFT: {
+                Vector3f delta = getHorizontalLeftDirection().mul(amount);
+                position.add(delta);
+                //velocity.add(delta);
                 break;
-            case RIGHT:
+            }
+            case RIGHT: {
                 move(MoveDirection.LEFT, -amount);
                 break;
-            case UP:
-                position.y += amount;
+            }
+            case UP: {
+                velocity.y += amount;
+                jumping = true;
                 break;
-            case DOWN:
-                position.y -= amount;
+            }
+            case DOWN: {
+                move(MoveDirection.UP, -amount);
                 break;
+            }
         }
     }
 
@@ -180,8 +282,16 @@ public class Camera {
         return frontDirection;
     }
 
+    public Vector3f getHorizontalFrontDirection() {
+        return new Vector3f(frontDirection.x, 0, frontDirection.z).normalize();
+    }
+
     public Vector3f getLeftDirection() {
         return leftDirection;
+    }
+
+    public Vector3f getHorizontalLeftDirection() {
+        return new Vector3f(leftDirection.x, 0, leftDirection.z).normalize();
     }
 
     public Matrix4f createViewMatrix() {

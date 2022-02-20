@@ -1,6 +1,7 @@
 package com.github.retrooper.radonclient.world.block;
 
 import com.github.retrooper.radonclient.entity.Entity;
+import com.github.retrooper.radonclient.entity.collision.BoxCollision;
 import com.github.retrooper.radonclient.model.Model;
 import org.joml.Vector3f;
 
@@ -92,6 +93,10 @@ public class Block {
             }
         }
         return false;
+    }
+
+    public BoxCollision getCollision() {
+        return new BoxCollision(new Vector3f(x, y, z), 1.0f, 1.0f);
     }
 
     public Model asModel() {

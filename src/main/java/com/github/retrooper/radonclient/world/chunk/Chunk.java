@@ -29,6 +29,21 @@ public class Chunk {
         }
     }
 
+    public Block getHighestBlock(int x, int z) {
+        int modX = x & 15;
+        int modZ = z & 15;
+        for (int i = chunkSections.length - 1; i >= 0; i--) {
+            ChunkSection section = chunkSections[i];
+            for (int y = 15; y >= 0; y--) {
+                Block block = section.getBlock(modX, y, modZ);
+                if (block.getType() != BlockTypes.AIR) {
+                    return block;
+                }
+            }
+        }
+        return null;
+    }
+
     public ChunkSection[] getChunkSections() {
         return chunkSections;
     }

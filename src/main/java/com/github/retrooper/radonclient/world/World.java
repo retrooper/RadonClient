@@ -49,10 +49,33 @@ public class World {
         return chunks.get(ChunkHelper.serializeChunkXZ(x >> 4, z >> 4));
     }
 
+    public boolean isGround(Block block) {
+        return block != null && block.getType() != BlockTypes.AIR;
+    }
+
+    public boolean isGround(int x, int y, int z) {
+        if (y == 0) {
+            return true;
+        }
+        Block block = getBlockAt(x, y, z);
+        return isGround(block);
+    }
+
+    public Block getHighestBlockAt(int x, int z) {
+        Chunk chunk = getChunkAt(x, z);
+        if (chunk != null) {
+            return chunk.getHighestBlock(x >> 4, z >> 4);
+        }
+        return null;
+    }
+
     public ChunkSection getChunkSectionAt(int x, int y, int z) {
         Chunk column = getChunkAt(x, z);
         if (column != null) {
-            return column.getChunkSections()[y >> 4];
+            int modY = y >> 4;
+            if (modY >= 0 && modY < column.getChunkSections().length) {
+                return column.getChunkSections()[y >> 4];
+            }
         }
         return null;
     }
@@ -132,7 +155,7 @@ public class World {
                                 int finalX = x;
                                 int finalZ = z;
                                 chunk.handlePerBlock(block -> {
-                                    if (block.getY() == 0) {
+                                    if (block.getY() == 0 || block.getY() == 1) {
                                         if (finalX == 0 && finalZ == 0) {
                                             block.setType(BlockTypes.DIRT);
                                         } else {

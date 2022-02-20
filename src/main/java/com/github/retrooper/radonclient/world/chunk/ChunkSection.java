@@ -2,6 +2,7 @@ package com.github.retrooper.radonclient.world.chunk;
 
 import com.github.retrooper.radonclient.world.block.Block;
 import com.github.retrooper.radonclient.world.block.BlockTypes;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,20 +45,21 @@ public class ChunkSection {
     }
 
     //X(0-15), Y(0-15), Z(0-15)
+    @NotNull
     public Block getBlock(int x, int y, int z) {
         return this.blocks[x][z][y];
     }
 
     //X(0-15), Y(0-15), Z(0-15)
-    public void setBlock(int x, int y, int z, Block block) {
+    public void setBlock(int x, int y, int z, @NotNull Block block) {
         this.blocks[x][z][y] = block;
     }
 
-    public void handlePerBlock(Consumer<Block> consumer) {
-        for (int x = 0; x < this.blocks.length; x++) {
-            for (int z = 0; z < this.blocks[x].length; z++) {
-                for (int y = 0; y < this.blocks[x][z].length; y++) {
-                    consumer.accept(this.blocks[x][z][y]);
+    public void handlePerBlock(Consumer<@NotNull Block> consumer) {
+        for (Block[][] key : this.blocks) {
+            for (Block[] value : key) {
+                for (Block block : value) {
+                    consumer.accept(block);
                 }
             }
         }

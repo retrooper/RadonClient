@@ -18,15 +18,15 @@ import com.github.retrooper.radonclient.world.World;
 import com.github.retrooper.radonclient.world.block.Block;
 import com.github.retrooper.radonclient.world.block.BlockType;
 import com.github.retrooper.radonclient.world.block.BlockTypes;
-import com.github.retrooper.radonclient.world.chunk.Chunk;
 import com.github.retrooper.radonclient.world.chunk.ChunkHelper;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFWErrorCallback;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
-import static com.github.retrooper.radonclient.util.MathUtil.floor;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.nanovg.NanoVG.*;
 
@@ -149,6 +149,7 @@ public class RadonClient {
         GRASS_MODEL = ModelFactory.createTexturedModel(plainGrassTextureIndices, vertices, indices, uv);
 
         Camera camera = new Camera(window);
+        camera.setPosition(new Vector3f(0, 10, 0));
         renderer.load();
         shader.start();
         shader.updateProjectionMatrix(camera.createProjectionMatrix());
@@ -159,27 +160,9 @@ public class RadonClient {
         int frameCount = 0;
         int fps;
         float lastSecondTime = lastFrameTime;
-        world.startChunkGenerationThread(window, camera, 2);
-        world.startChunkCleanupThread(window, camera, 2);
+        world.startChunkGenerationThread(window, camera, 4);
+        world.startChunkCleanupThread(window, camera, 4);
         while (window.isOpen()) {
-            if (InputUtil.isKeyDown(GLFW_KEY_W)) {
-                camera.move(MoveDirection.FORWARD, 10f * deltaTime);
-            } else if (InputUtil.isKeyDown(GLFW_KEY_S)) {
-                camera.move(MoveDirection.BACKWARD, 10f * deltaTime);
-            }
-
-            if (InputUtil.isKeyDown(GLFW_KEY_A)) {
-                camera.move(MoveDirection.LEFT, 10f * deltaTime);
-            } else if (InputUtil.isKeyDown(GLFW_KEY_D)) {
-                camera.move(MoveDirection.RIGHT, 10f * deltaTime);
-            }
-
-            if (InputUtil.isKeyDown(GLFW_KEY_SPACE)) {
-                camera.move(MoveDirection.UP, 5f * deltaTime);
-            } else if (InputUtil.isKeyDown(GLFW_KEY_LEFT_ALT)) {
-                camera.move(MoveDirection.DOWN, 5f * deltaTime);
-            }
-
             if (InputUtil.isMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT)) {
                 //System.out.println("Change 1 0 0 to grass!");
                 System.out.println("Cam pos: " + camera.getPosition().x + ", " + camera.getPosition().y + ", " + camera.getPosition().z);
@@ -262,7 +245,7 @@ public class RadonClient {
             double mouseX = InputUtil.getMouseXPos();
             double mouseY = InputUtil.getMouseYPos();
             camera.setMousePos(mouseX, mouseY);
-            camera.updateRotation();
+            camera.update(deltaTime);
             Renderer.prepare();
             shader.start();
             shader.updateViewMatrix(camera.createViewMatrix());
@@ -329,6 +312,10 @@ public class RadonClient {
 
     public StaticShader getShader() {
         return shader;
+    }
+
+    public World getWorld() {
+        return world;
     }
 
     public static RadonClient getInstance() {
