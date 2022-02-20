@@ -123,6 +123,7 @@ public class RadonClient {
                 23, 21, 22
         };
 
+
         TEXTURES = TextureFactory.loadTextures(128, 128, "bottom_grass.png", "top_grass.png", "side_grass.png");
         //Second axis is redundant here
         //We need to know it for each vertex

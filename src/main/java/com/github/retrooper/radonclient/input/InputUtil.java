@@ -1,31 +1,22 @@
 package com.github.retrooper.radonclient.input;
 
 import com.github.retrooper.radonclient.window.Window;
-import org.joml.Vector2d;
-import org.lwjgl.BufferUtils;
-import org.lwjgl.glfw.*;
-
-import java.nio.DoubleBuffer;
+import org.lwjgl.glfw.GLFWCursorPosCallback;
+import org.lwjgl.glfw.GLFWScrollCallback;
+import org.lwjgl.glfw.GLFWWindowSizeCallback;
 
 import static org.lwjgl.glfw.GLFW.*;
 
 public class InputUtil {
-    private static final byte[] KEYS = new byte[348];
-    private static final byte[] MOUSE_BUTTONS = new byte[7];
+    private static long WINDOW_HANDLE;
     private static double MOUSE_X_POS, MOUSE_Y_POS, SCROLL_X, SCROLL_Y, WINDOW_WIDTH, WINDOW_HEIGHT;
 
-    private static GLFWKeyCallback KEY_CALLBACK;
-    private static GLFWMouseButtonCallback MOUSE_CALLBACK;
-    private static GLFWCursorPosCallback MOUSE_MOVE_CALLBACK;
-    private static GLFWScrollCallback SCROLL_WHEEL_CALLBACK;
-    private static GLFWWindowSizeCallback WINDOW_RESIZE_CALLBACK;
-
     public static boolean isKeyDown(int key) {
-        return KEYS[key] == 1;
+        return glfwGetKey(WINDOW_HANDLE, key) == GLFW_PRESS;
     }
 
     public static boolean isMouseButtonDown(int button) {
-        return MOUSE_BUTTONS[button] == 1;
+        return glfwGetMouseButton(WINDOW_HANDLE, button) == GLFW_PRESS;
     }
 
     public static double getMouseXPos() {
@@ -53,21 +44,8 @@ public class InputUtil {
     }
 
     public static void init(Window window) {
-        KEY_CALLBACK = new GLFWKeyCallback() {
-            @Override
-            public void invoke(long window, int key, int scancode, int action, int mods) {
-                KEYS[key] = (action != GLFW_RELEASE) ? (byte) 1 : (byte) 0;
-            }
-        };
-
-        MOUSE_CALLBACK = new GLFWMouseButtonCallback() {
-            @Override
-            public void invoke(long window, int button, int action, int mods) {
-                MOUSE_BUTTONS[button] = (action != GLFW_RELEASE) ? (byte) 1 : (byte) 0;
-            }
-        };
-
-        MOUSE_MOVE_CALLBACK = new GLFWCursorPosCallback() {
+        WINDOW_HANDLE = window.getHandle();
+        GLFWCursorPosCallback mouseMoveCallback = new GLFWCursorPosCallback() {
             @Override
             public void invoke(long window, double xPos, double yPos) {
                 MOUSE_X_POS = xPos;
@@ -75,7 +53,7 @@ public class InputUtil {
             }
         };
 
-        SCROLL_WHEEL_CALLBACK = new GLFWScrollCallback() {
+        GLFWScrollCallback scrollWheelCallback = new GLFWScrollCallback() {
             @Override
             public void invoke(long window, double deltaX, double deltaY) {
                 SCROLL_X += deltaX;
@@ -83,7 +61,7 @@ public class InputUtil {
             }
         };
 
-        WINDOW_RESIZE_CALLBACK = new GLFWWindowSizeCallback() {
+        GLFWWindowSizeCallback windowResizeCallback = new GLFWWindowSizeCallback() {
             @Override
             public void invoke(long window, int width, int height) {
                 WINDOW_WIDTH = width;
@@ -91,11 +69,8 @@ public class InputUtil {
             }
         };
 
-        long handle = window.getHandle();
-        glfwSetKeyCallback(handle, KEY_CALLBACK);
-        glfwSetMouseButtonCallback(handle, MOUSE_CALLBACK);
-        glfwSetCursorPosCallback(handle, MOUSE_MOVE_CALLBACK);
-        glfwSetScrollCallback(handle, SCROLL_WHEEL_CALLBACK);
-        glfwSetWindowSizeCallback(handle, WINDOW_RESIZE_CALLBACK);
+        glfwSetCursorPosCallback(WINDOW_HANDLE, mouseMoveCallback);
+        glfwSetScrollCallback(WINDOW_HANDLE, scrollWheelCallback);
+        glfwSetWindowSizeCallback(WINDOW_HANDLE, windowResizeCallback);
     }
 }
